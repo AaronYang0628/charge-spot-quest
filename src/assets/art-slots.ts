@@ -9,7 +9,7 @@ import type { VehicleColor, VehicleType } from '../types'
 export type VehicleSpriteKey = `${VehicleType}-${VehicleColor}`
 export type VehiclePose = 'display' | 'park'
 
-const TYPES: VehicleType[] = ['sedan', 'suv', 'van', 'pickup']
+const TYPES: VehicleType[] = ['convertible', 'pickup']
 const COLORS: VehicleColor[] = ['blue', 'yellow', 'orange', 'white', 'red', 'green']
 
 function build(suffix: '' | '-park'): Partial<Record<VehicleSpriteKey, string>> {
@@ -17,7 +17,7 @@ function build(suffix: '' | '-park'): Partial<Record<VehicleSpriteKey, string>> 
   for (const t of TYPES) {
     for (const c of COLORS) {
       const key = `${t}-${c}` as VehicleSpriteKey
-      out[key] = `/art/vehicles/${t}-${c}${suffix}.webp`
+      out[key] = `/art/vehicles/${t === 'convertible' ? 'sedan' : t}-${c}${suffix}.webp`
     }
   }
   return out

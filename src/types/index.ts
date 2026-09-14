@@ -2,7 +2,7 @@ export type SpotId = 'A' | 'B' | 'C'
 
 export type TimePeriod = 'morning' | 'noon' | 'evening'
 
-export type VehicleType = 'sedan' | 'suv' | 'van' | 'pickup'
+export type VehicleType = 'convertible' | 'pickup'
 export type VehicleColor =
   | 'blue'
   | 'yellow'
@@ -29,6 +29,7 @@ export interface SpotStatus {
   /** if occupied: when occupancy started (ISO) */
   occupiedSince?: string
   /** parked vehicle for display */
+  reservedPeriods?: TimePeriod[]
   vehicle?: VehicleInfo
 }
 
@@ -71,9 +72,7 @@ export const PERIOD_HINTS: Record<TimePeriod, string> = {
 }
 
 export const VEHICLE_TYPE_LABELS: Record<VehicleType, string> = {
-  sedan: '轿车',
-  suv: 'SUV',
-  van: '面包车',
+  convertible: '敞篷车',
   pickup: '皮卡',
 }
 
@@ -102,7 +101,7 @@ export const VEHICLE_PALETTE: Record<
 export const DEFAULT_VEHICLE: VehicleInfo = {
   plate: '',
   color: 'blue',
-  type: 'sedan',
+  type: 'convertible',
 }
 
 export const SPOT_LABELS: Record<SpotId, string> = {

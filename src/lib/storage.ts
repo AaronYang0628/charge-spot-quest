@@ -1,4 +1,5 @@
 import type { AppState, VehicleInfo } from '../types'
+import { normalizeVehicle, normalizeBookings } from './normalize'
 import { makeSessionId } from './id'
 
 const STORAGE_KEY = 'charge-spot-quest-v3'
@@ -24,8 +25,8 @@ export function loadState(): AppState {
     return {
       ...defaultState(),
       ...parsed,
-      bookings: Array.isArray(parsed.bookings) ? parsed.bookings : [],
-      vehicle: parsed.vehicle ?? loadVehicle(),
+      bookings: normalizeBookings(parsed.bookings),
+      vehicle: parsed.vehicle ? normalizeVehicle(parsed.vehicle) : loadVehicle(),
       sessionId: parsed.sessionId || makeSessionId(),
     }
   } catch {
@@ -49,7 +50,7 @@ export function loadVehicle(): VehicleInfo | null {
   try {
     const raw = localStorage.getItem(VEHICLE_KEY)
     if (!raw) return null
-    return JSON.parse(raw) as VehicleInfo
+    return normalizeVehicle(JSON.parse(raw))
   } catch {
     return null
   }

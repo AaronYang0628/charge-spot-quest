@@ -18,7 +18,7 @@ export default function App() {
     closeDrawer,
     confirm,
     dismissResult,
-    resetAll,
+    resetAll, onDrawerExited, onParked, onFinished,
   } = useAppState()
 
   const huge = formatHugeDate()
@@ -53,7 +53,8 @@ export default function App() {
             spots={spots}
             animVehicle={animVehicle}
             animPhase={animPhase}
-            selected={drawerOpen ? 'C' : null}
+            paused={drawerOpen}
+            onParked={onParked} onFinished={onFinished}
             onSelectC={openDrawer}
           />
         </div>
@@ -69,12 +70,8 @@ export default function App() {
           className="px-1 text-center text-[10px] leading-relaxed"
           style={{ color: 'var(--ui-muted)' }}
         >
-          仅 C 可约 · A/B 维护中 · 无登录无支付 · 车辆信息存本机
-          {state.sessionId ? (
-            <span className="mt-0.5 block truncate opacity-60">
-              session · {state.sessionId.slice(0, 18)}…
-            </span>
-          ) : null}
+          仅 C 可约 · A/B 维护中 · 无需登录与支付
+          <span className="mt-1 block opacity-70">早 · 中 · 晚，把合适的时间留给你。</span>
         </p>
 
         <button
@@ -93,6 +90,8 @@ export default function App() {
         onClose={closeDrawer}
         onConfirm={(period, vehicle) => void confirm(period, vehicle)}
         confirming={confirming}
+        reservedPeriods={spots.find(s => s.id === 'C')?.reservedPeriods ?? []}
+        onExited={onDrawerExited}
       />
 
       <ResultToast

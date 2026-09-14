@@ -68,3 +68,51 @@ body {
 .bay-pulse {
   animation: bay-pulse 1.3s ease-in-out infinite;
 }
+
+.app-shell { max-width: 640px; }
+.scene-section { background: #f9faf6; border-radius: 12px; overflow: hidden; }
+.scene-toolbar { display:flex; justify-content:space-between; padding:14px 12px 0; font-size:9px; letter-spacing:.12em; color:#5c685f; font-weight:800; }
+.scene-toolbar b { font-weight:500; letter-spacing:0; }
+.daylight { color:#aa8341; }
+.scene-canvas { height:clamp(290px, 85vw, 420px); position:relative; touch-action:pan-y; isolation:isolate; z-index:0; }
+.scene-canvas:not(.adjusting) canvas { touch-action:pan-y !important; }
+.scene-canvas:not(.adjusting) > div { touch-action:pan-y !important; }
+.scene-canvas.adjusting { touch-action:none; }
+.scene-controls { display:flex; align-items:center; gap:8px; padding:0 12px 12px; color:#6d776e; font-size:9px; }
+.scene-controls > span { flex:1; }
+.scene-controls button { border:1px solid #d9dfd4; border-radius:6px; padding:5px; background:#fff; white-space:nowrap; }
+.scene-controls button[aria-pressed=true] { background:#e0e8db; }
+.reserve-button { display:flex; justify-content:space-between; width:calc(100% - 24px); margin:0 12px 12px; padding:13px 16px; border-radius:10px; color:white; background:#5870c0; font-weight:700; font-size:13px; }
+.bay-letter { font-size:23px; font-weight:900; color:#f5f2df; text-shadow:0 1px 1px #707b70; }
+.scene-tag { display:block; padding:5px 8px; border-radius:5px; font-size:10px; font-weight:700; white-space:nowrap; box-shadow:0 2px 5px #263e3020; }
+.scene-tag.muted { background:#f4f0e7; color:#766d5f; pointer-events:none; }
+.scene-tag.action { background:#fffef4; color:#45614f; cursor:pointer; }
+.scene-loading { display:grid; place-items:center; height:100%; color:#788778; font-size:12px; }
+.scene-fallback img { width:100%; height:85%; object-fit:cover; }
+.scene-fallback p { text-align:center; font-size:12px; }
+.scene-fallback { height:100%; }
+.vehicle-preview { width:100%; height:135px; position:relative; }
+.preview-fallback { display:grid; height:100%; place-items:center; font-size:12px; }
+.booking-sheet { max-height:94dvh; overflow-y:auto; padding-bottom:env(safe-area-inset-bottom); }
+button { cursor:pointer; }
+button:disabled { cursor:default; opacity:.55; }
+button:focus-visible, input:focus-visible { outline:3px solid #94a9e8; outline-offset:3px; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration:.01ms !important; transition-duration:.01ms !important; } }
+
+.charge-tag { background:#eaffee; color:#207a4f; white-space:nowrap; padding:6px 10px; border-radius:8px; font-size:11px; font-weight:700; }
+
+/* Sunlit courtyard art direction: warm paper, sage and terracotta. */
+body { background:#f2efe7; }
+.app-shell { max-width:700px; background:linear-gradient(180deg,#fffcf6 0%,#f5f1e8 100%); box-shadow:0 0 0 1px #e9e2d5, 0 24px 70px -40px #776b48; }
+.lot-card { padding:0; border:1px solid #e3ddcd; background:#f8f4e9; border-radius:20px; box-shadow:0 10px 25px -18px #766e52; }
+.scene-section { background:#f9f6ed; border-radius:20px; }
+.scene-toolbar { padding:18px 16px 6px; color:#688074; letter-spacing:.14em; font-size:9px; }
+.scene-toolbar b { color:#8a8b79; }
+.scene-canvas { height:clamp(355px, 100vw, 480px); }
+.scene-controls { padding:10px 16px 12px; color:#818773; }
+.scene-controls button { background:#fffcf4; border-color:#dddcc9; color:#6e796b; }
+.reserve-button { width:calc(100% - 32px); margin:0 16px 16px; background:#4f7565; border:1px solid #466d5d; border-radius:12px; padding:14px 16px; box-shadow:0 3px 0 #355b4b; }
+.scene-tag.muted { box-shadow:0 1px 3px #5d493a18; background:#fff8e7; color:#927658; font-size:9px; padding:3px 6px; }
+.scene-tag.action { background:#fff9e7; color:#446f58; border:1px solid #e2dec4; box-shadow:0 3px 8px #38584425; padding:7px 10px; }
+.daylight { background:#f7eacd; color:#ad8549; border:1px solid #ecdfbc; padding:3px 6px; border-radius:12px; letter-spacing:0; }
+.vehicle-preview { background:radial-gradient(ellipse at 50% 80%, #dddccf 0%,#f8f6ee 65%); border-radius:12px; }

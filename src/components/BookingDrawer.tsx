@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import type { TimePeriod, VehicleColor, VehicleInfo, VehicleType } from '../types'
 import {
@@ -10,7 +10,7 @@ import {
   VEHICLE_TYPE_LABELS,
 } from '../types'
 import { formatHugeDate, todayISO } from '../lib/time'
-import { LowPolyCar } from './LowPolyCar'
+const VehiclePreview = lazy(() => import('./VehiclePreview'))
 
 interface Props {
   open: boolean
@@ -18,6 +18,8 @@ interface Props {
   onClose: () => void
   onConfirm: (period: TimePeriod, vehicle: VehicleInfo) => void
   confirming?: boolean
+  reservedPeriods: TimePeriod[]
+  onExited: () => void
 }
 
 const PERIODS: TimePeriod[] = ['morning', 'noon', 'evening']
@@ -32,22 +34,41 @@ export function BookingDrawer({
   initialVehicle,
   onClose,
   onConfirm,
-  confirming,
+  confirming, reservedPeriods, onExited,
 }: Props) {
   const [period, setPeriod] = useState<TimePeriod>('noon')
   const [plate, setPlate] = useState('')
   const [color, setColor] = useState<VehicleColor>(DEFAULT_VEHICLE.color)
   const [type, setType] = useState<VehicleType>(DEFAULT_VEHICLE.type)
   const huge = formatHugeDate()
+  const sheet = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!open) return
+    const previous = document.activeElement as HTMLElement | null
+    const overflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    const timer = window.setTimeout(() => sheet.current?.querySelector<HTMLElement>('button:not(:disabled), input')?.focus(), 100)
+    const key = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !confirming) onClose()
+      if (e.key !== 'Tab') return
+      const items = [...(sheet.current?.querySelectorAll<HTMLElement>('button:not(:disabled),input') ?? [])]
+      const first = items[0], last = items[items.length-1]
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last?.focus() }
+      if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first?.focus() }
+    }
+    document.addEventListener('keydown', key)
+    return () => { clearTimeout(timer); document.body.style.overflow = overflow; document.removeEventListener('keydown', key); previous?.focus() }
+  }, [open, confirming, onClose])
 
   useEffect(() => {
     if (!open) return
     const v = initialVehicle
+    // oxlint-disable-next-line react/set-state-in-effect -- Reset the form for a newly opened reservation.
     setPlate(v?.plate ?? '')
     setColor(v?.color ?? DEFAULT_VEHICLE.color)
     setType(v?.type ?? DEFAULT_VEHICLE.type)
-    setPeriod('noon')
-  }, [open, initialVehicle])
+    setPeriod(PERIODS.find(p => !reservedPeriods.includes(p)) ?? 'noon')
+  }, [open, initialVehicle, reservedPeriods])
 
   const vehicle: VehicleInfo = {
     plate: plate.trim(),
@@ -56,7 +77,7 @@ export function BookingDrawer({
   }
 
   return (
-    <AnimatePresence>
+    <AnimatePresence onExitComplete={onExited}>
       {open && (
         <>
           <motion.button
@@ -69,8 +90,8 @@ export function BookingDrawer({
             transition={{ duration: DRAWER_MS, ease: 'easeOut' }}
             onClick={onClose}
           />
-          <motion.div
-            className="fixed inset-x-0 bottom-0 z-50 mx-auto max-w-[420px] rounded-t-3xl shadow-2xl"
+          <motion.div ref={sheet}
+            className="booking-sheet fixed inset-x-0 bottom-0 z-50 mx-auto max-w-[460px] rounded-t-3xl shadow-2xl"
             style={{
               background: 'var(--ui-shell-top, #ffffff)',
               borderTop: '1px solid var(--ui-border)',
@@ -80,6 +101,7 @@ export function BookingDrawer({
             exit={{ y: '100%' }}
             transition={{ duration: DRAWER_MS, ease: 'easeOut' }}
             role="dialog"
+            aria-label="预约车位"
             aria-modal
           >
             <div
@@ -113,7 +135,7 @@ export function BookingDrawer({
                   border: '1px solid var(--ui-border)',
                 }}
               >
-                <LowPolyCar type={type} color={color} size={100} />
+                <Suspense fallback={<div className="vehicle-preview">正在加载预览…</div>}><VehiclePreview vehicle={vehicle} /></Suspense>
               </div>
 
               <p
@@ -129,6 +151,7 @@ export function BookingDrawer({
                     <button
                       key={p}
                       type="button"
+                      disabled={reservedPeriods.includes(p) || confirming}
                       onClick={() => setPeriod(p)}
                       className="rounded-2xl py-3 text-center transition"
                       style={
@@ -147,7 +170,7 @@ export function BookingDrawer({
                     >
                       <div className="text-2xl font-black">{PERIOD_LABELS[p]}</div>
                       <div className="text-[10px] font-medium opacity-80">
-                        {PERIOD_HINTS[p]}
+                        {reservedPeriods.includes(p) ? '已预约' : PERIOD_HINTS[p]}
                       </div>
                     </button>
                   )
@@ -208,7 +231,7 @@ export function BookingDrawer({
               >
                 车辆类型
               </p>
-              <div className="mb-5 grid grid-cols-4 gap-1.5">
+              <div className="mb-5 grid grid-cols-2 gap-1.5">
                 {TYPES.map((t) => {
                   const on = type === t
                   return (
@@ -237,7 +260,7 @@ export function BookingDrawer({
 
               <button
                 type="button"
-                disabled={confirming}
+                disabled={confirming || reservedPeriods.includes(period)}
                 onClick={() => onConfirm(period, vehicle)}
                 className="w-full rounded-2xl py-3.5 text-[15px] font-black disabled:opacity-60"
                 style={{

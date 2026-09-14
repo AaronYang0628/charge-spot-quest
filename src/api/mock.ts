@@ -1,129 +1,45 @@
 import type { Booking, SpotStatus, TimePeriod, VehicleInfo } from '../types'
 import { uid } from '../lib/id'
 import { todayISO } from '../lib/time'
+import { normalizeBookings, normalizeVehicle } from '../lib/normalize'
 
-/** In-memory mock “backend” for today’s occupancy + bookings */
-const store: {
-  bookings: Booking[]
-  spots: SpotStatus[]
-} = {
-  bookings: [],
-  spots: [
-    {
-      id: 'A',
-      bookable: false,
-      maintenance: true,
-      occupied: false,
-      idleIn1h: 0.12,
-      idleTonight: 0.35,
-    },
-    {
-      id: 'B',
-      bookable: false,
-      maintenance: true,
-      occupied: false,
-      idleIn1h: 0.08,
-      idleTonight: 0.22,
-    },
-    {
-      id: 'C',
-      bookable: true,
-      maintenance: false,
-      occupied: true,
-      idleIn1h: 0.05,
-      idleTonight: 0.34,
-      occupiedSince: new Date().toISOString(),
-      vehicle: { plate: '沪A·DEMO', color: 'blue', type: 'sedan' },
-    },
-  ],
+export const MOCK_KEY = 'charge-spot-quest-mock-v1'
+function read(): Booking[] {
+  try {
+    const current = localStorage.getItem(MOCK_KEY)
+    if (current !== null) return normalizeBookings(JSON.parse(current))
+    const legacy = JSON.parse(localStorage.getItem('charge-spot-quest-v3') || '{}')
+    const bookings = normalizeBookings(legacy.bookings)
+    localStorage.setItem(MOCK_KEY, JSON.stringify(bookings))
+    return bookings
+  } catch { return [] }
 }
-
 export function mockGetSpots(): SpotStatus[] {
-  return store.spots.map((s) => ({ ...s }))
-}
-
-export function mockGetBookings(sessionId: string): Booking[] {
-  return store.bookings.filter((b) => b.sessionId === sessionId && !b.cancelled)
-}
-
-export function mockCreateBooking(input: {
-  sessionId: string
-  date: string
-  period: TimePeriod
-  vehicle: VehicleInfo
-}): { ok: boolean; reason?: string; booking?: Booking } {
-  const spot = store.spots.find((s) => s.id === 'C')!
-  if (spot.maintenance || !spot.bookable) {
-    return { ok: false, reason: '车位 C 暂不可约' }
-  }
-  if (spot.occupied) {
-    return { ok: false, reason: '车位 C 当前被占用' }
-  }
-  const clash = store.bookings.find(
-    (b) =>
-      !b.cancelled &&
-      b.spotId === 'C' &&
-      b.date === input.date &&
-      b.period === input.period,
-  )
-  if (clash) {
-    return { ok: false, reason: `该「${periodLabel(input.period)}」时段已被预约` }
-  }
-
-  const booking: Booking = {
-    id: uid('bk'),
-    spotId: 'C',
-    sessionId: input.sessionId,
-    date: input.date,
-    period: input.period,
-    vehicle: input.vehicle,
-    createdAt: new Date().toISOString(),
-    cancelled: false,
-  }
-  store.bookings.push(booking)
-
-  // If booking is for today, mark C occupied for the scene
-  if (input.date === todayISO()) {
-    spot.occupied = true
-    spot.occupiedSince = new Date().toISOString()
-    spot.vehicle = input.vehicle
-    spot.idleIn1h = 0.05
-    spot.idleTonight = Math.max(0.15, spot.idleTonight - 0.3)
-  }
-
-  return { ok: true, booking }
-}
-
-function periodLabel(p: TimePeriod): string {
-  return ({ morning: '早', noon: '中', evening: '晚' } as const)[p]
-}
-
-export function mockReset() {
-  store.bookings = []
-  store.spots = [
-    {
-      id: 'A',
-      bookable: false,
-      maintenance: true,
-      occupied: false,
-      idleIn1h: 0.12,
-      idleTonight: 0.35,
-    },
-    {
-      id: 'B',
-      bookable: false,
-      maintenance: true,
-      occupied: false,
-      idleIn1h: 0.08,
-      idleTonight: 0.22,
-    },
-    {
-      id: 'C',
-      bookable: true,
-      maintenance: false,
-      occupied: false,
-      idleIn1h: 0.78,
-      idleTonight: 0.64,
-    },
+  const reservedPeriods = read().filter(b => !b.cancelled && b.date === todayISO()).map(b => b.period)
+  return [
+    { id: 'A', maintenance: true, bookable: false, occupied: false, idleIn1h: .12, idleTonight: .35 },
+    { id: 'B', maintenance: true, bookable: false, occupied: false, idleIn1h: .08, idleTonight: .22 },
+    { id: 'C', maintenance: false, bookable: reservedPeriods.length < 3, occupied: false,
+      idleIn1h: .78, idleTonight: .64, reservedPeriods },
   ]
 }
+export function mockGetBookings(sessionId: string): Booking[] {
+  return read().filter(b => b.sessionId === sessionId && !b.cancelled)
+}
+export function mockCreateBooking(input: {
+  sessionId: string; date: string; period: TimePeriod; vehicle: VehicleInfo
+}) {
+  const bookings = read()
+  if (input.date !== todayISO() || !['morning', 'noon', 'evening'].includes(input.period)) {
+    return { ok: false, reason: '请选择今天的有效时段' }
+  }
+  if (bookings.some(b => !b.cancelled && b.date === input.date && b.period === input.period)) {
+    return { ok: false, reason: '该时段已被预约，请选择其他时段' }
+  }
+  const booking: Booking = { ...input, vehicle: normalizeVehicle(input.vehicle),
+    id: uid('bk'), spotId: 'C', createdAt: new Date().toISOString(), cancelled: false }
+  // Single-tab mock only; real multi-client concurrency requires a server.
+  localStorage.setItem(MOCK_KEY, JSON.stringify([...bookings, booking]))
+  return { ok: true, booking }
+}
+export function mockReset() { localStorage.setItem(MOCK_KEY, '[]') }

@@ -31,31 +31,31 @@ export function SpotBars({ spot }: Props) {
     >
       <div className="flex items-center justify-between">
         <span
-          className="text-[11px] font-black tracking-wide"
+          className="text-[12px] font-black tracking-wide"
           style={{ color: 'var(--ui-text)' }}
         >
           {spot.id} 号位
         </span>
         {spot.maintenance ? (
           <span
-            className="rounded px-1.5 py-0.5 text-[9px] font-bold"
+            className="rounded px-1.5 py-0.5 text-[10px] font-bold"
             style={{ background: 'var(--ui-maint-pill)', color: 'var(--ui-muted)' }}
           >
             维护中
           </span>
         ) : spot.occupied ? (
           <span
-            className="rounded px-1.5 py-0.5 text-[9px] font-bold"
+            className="rounded px-1.5 py-0.5 text-[10px] font-bold"
             style={{ background: 'var(--ui-warn)', color: '#ffffff' }}
           >
             占用中
           </span>
         ) : (
           <span
-            className="rounded px-1.5 py-0.5 text-[9px] font-bold"
+            className="rounded px-1.5 py-0.5 text-[10px] font-bold"
             style={{ background: 'var(--ui-accent)', color: '#ffffff' }}
           >
-            可预约
+            {spot.reservedPeriods?.length ? `已约 ${spot.reservedPeriods.length}/3` : '可预约'}
           </span>
         )}
       </div>
@@ -66,7 +66,7 @@ export function SpotBars({ spot }: Props) {
       {spot.occupied && (
         <div className="pt-0.5">
           <div
-            className="mb-0.5 flex items-center justify-between text-[9px]"
+            className="mb-0.5 flex items-center justify-between text-[10px]"
             style={{ color: 'var(--ui-muted)' }}
           >
             <span>已占用时长</span>
@@ -83,7 +83,7 @@ export function SpotBars({ spot }: Props) {
               style={{ background: 'var(--ui-warn)', opacity: 0.85 }}
             />
             <div className="absolute inset-0 flex items-center justify-center">
-              <span className="font-mono text-[11px] font-black tabular-nums text-white">
+              <span className="font-mono text-[12px] font-black tabular-nums text-white">
                 {formatElapsed(elapsed)}
               </span>
             </div>
@@ -107,7 +107,7 @@ function Bar({
   return (
     <div>
       <div
-        className="mb-0.5 flex items-center justify-between text-[9px]"
+        className="mb-0.5 flex items-center justify-between text-[10px]"
         style={{ color: 'var(--ui-muted)' }}
       >
         <span>{label}</span>
