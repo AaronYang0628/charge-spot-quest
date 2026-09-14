@@ -115,10 +115,12 @@ export function ParkingLot({
         {byId.A?.occupied && byId.A.vehicle && (
           <div
             className="absolute left-[3%] top-[34%] w-[26%]"
-            style={{
+            style={
               filter: 'saturate(0.7)',
               opacity: 0.85,
-            }}
+              transform: 'rotate(48deg)',
+              transformOrigin: 'center center',
+            }
           >
             <LowPolyCar
               type={byId.A.vehicle.type}
@@ -131,16 +133,16 @@ export function ParkingLot({
         {/* Spot B empty — nothing */}
 
         {/* Spot C — parked from mock OR animation */}
-        {/* Cars sit parallel to bay long axis (nose toward charger). No diagonal crabbing. */}
+        {/* 倒车入库: rear toward charger (top), nose toward aisle (bottom); yaw locked vertical. */}
         <AnimatePresence>
           {animPhase && animVehicle && (
             <motion.div
               key="anim-car"
               className="absolute w-[30%]"
-              initial={{ left: '60%', top: '68%', opacity: 1, rotate: 0 }}
-              animate={{ left: '60%', top: '32%', opacity: 1, rotate: 0 }}
+              initial={{ left: '60%', top: '72%', opacity: 1, rotate: 48 }}
+              animate={{ left: '60%', top: '34%', opacity: 1, rotate: 48 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
+              transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
               style={{ transformOrigin: 'center center' }}
             >
               <LowPolyCar
@@ -154,7 +156,10 @@ export function ParkingLot({
         </AnimatePresence>
 
         {!animPhase && byId.C?.occupied && byId.C.vehicle && (
-          <div className="absolute left-[60%] top-[32%] w-[26%]">
+          <div
+            className="absolute left-[60%] top-[34%] w-[26%]"
+            style={{ transform: 'rotate(48deg)', transformOrigin: 'center center' }}
+          >
             <LowPolyCar
               type={byId.C.vehicle.type}
               color={byId.C.vehicle.color}
