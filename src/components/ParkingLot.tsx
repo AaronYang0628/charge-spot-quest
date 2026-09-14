@@ -15,6 +15,12 @@ interface Props {
 /**
  * High-angle low-poly parking lot: daylight asphalt, white bay lines, hard shadows.
  */
+/** 3D plant-on-lot: Z yaw + X pitch (not flat CSS rotate only) */
+const CAR_PERSPECTIVE = 900
+const CAR_YAW_Z = -30 // deg, CCW on screen
+const CAR_PITCH_X = 28 // deg, tip into lot ground plane — tune with Aaron
+const carTransform = `perspective(${CAR_PERSPECTIVE}px) rotateX(${CAR_PITCH_X}deg) rotateZ(${CAR_YAW_Z}deg)`
+
 export function ParkingLot({
   spots,
   animVehicle,
@@ -110,7 +116,7 @@ export function ParkingLot({
       </svg>
 
       {/* cars layered as HTML/SVG over the lot for easier animation */}
-      <div className="pointer-events-none absolute inset-0">
+      <div className="pointer-events-none absolute inset-0" style={{ perspective: CAR_PERSPECTIVE, transformStyle: 'preserve-3d' }}>
         {/* Spot A parked */}
         {byId.A?.occupied && !byId.A.maintenance && byId.A.vehicle && (
           <div
@@ -118,8 +124,9 @@ export function ParkingLot({
             style={{
               filter: 'saturate(0.7)',
               opacity: 0.85,
-              transform: 'rotate(-30deg)',
-              transformOrigin: 'center center',
+              transform: carTransform,
+              transformOrigin: 'center bottom',
+              transformStyle: 'preserve-3d',
             }}
           >
             <LowPolyCar
@@ -134,17 +141,33 @@ export function ParkingLot({
         {/* Spot B empty — nothing */}
 
         {/* Spot C — parked from mock OR animation */}
-        {/* 倒车入库: rear toward charger (top), nose toward aisle (bottom); yaw locked vertical. */}
+        {/* 倒车入库 + 3D: yaw Z + pitch X into lot plane */}
         <AnimatePresence>
           {animPhase && animVehicle && (
             <motion.div
               key="anim-car"
               className="absolute w-[30%]"
-              initial={{ left: '58%', top: '70%', opacity: 1, rotate: -30 }}
-              animate={{ left: '58%', top: '36%', opacity: 1, rotate: -30 }}
+              initial={{
+                left: '58%',
+                top: '70%',
+                opacity: 1,
+                rotateX: CAR_PITCH_X,
+                rotateZ: CAR_YAW_Z,
+              }}
+              animate={{
+                left: '58%',
+                top: '36%',
+                opacity: 1,
+                rotateX: CAR_PITCH_X,
+                rotateZ: CAR_YAW_Z,
+              }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-              style={{ transformOrigin: 'center center' }}
+              style={{
+                transformOrigin: 'center bottom',
+                transformPerspective: CAR_PERSPECTIVE,
+                transformStyle: 'preserve-3d',
+              }}
             >
               <LowPolyCar
                 pose="park"
@@ -160,7 +183,11 @@ export function ParkingLot({
         {!animPhase && byId.C?.occupied && !byId.C.maintenance && byId.C.vehicle && (
           <div
             className="absolute left-[58%] top-[36%] w-[26%]"
-            style={{ transform: 'rotate(-30deg)', transformOrigin: 'center center' }}
+            style={{
+              transform: carTransform,
+              transformOrigin: 'center bottom',
+              transformStyle: 'preserve-3d',
+            }}
           >
             <LowPolyCar
               pose="park"
