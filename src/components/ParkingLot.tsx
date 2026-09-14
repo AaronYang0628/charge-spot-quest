@@ -117,7 +117,12 @@ export function ParkingLot({
         {byId.A?.occupied && byId.A.vehicle && (
           <div
             className="absolute left-[8%] top-[28%] w-[28%]"
-            style={{ filter: 'saturate(0.7)', opacity: 0.85 }}
+            style={{
+              filter: 'saturate(0.7)',
+              opacity: 0.85,
+              transform: 'rotate(-28deg)',
+              transformOrigin: 'center center',
+            }}
           >
             <LowPolyCar
               type={byId.A.vehicle.type}
@@ -130,15 +135,16 @@ export function ParkingLot({
         {/* Spot B empty — nothing */}
 
         {/* Spot C — parked from mock OR animation */}
+        {/* Cars sit parallel to bay long axis (nose toward charger). No diagonal crabbing. */}
         <AnimatePresence>
           {animPhase && animVehicle && (
             <motion.div
               key="anim-car"
               className="absolute w-[30%]"
-              initial={{ left: '82%', top: '4%', opacity: 1, rotate: -10 }}
-              animate={{ left: '58%', top: '22%', opacity: 1, rotate: -6 }}
+              initial={{ left: '58%', top: '62%', opacity: 1, rotate: -28 }}
+              animate={{ left: '58%', top: '22%', opacity: 1, rotate: -28 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+              transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
               style={{ transformOrigin: 'center center' }}
             >
               <LowPolyCar
@@ -152,7 +158,10 @@ export function ParkingLot({
         </AnimatePresence>
 
         {!animPhase && byId.C?.occupied && byId.C.vehicle && (
-          <div className="absolute left-[58%] top-[22%] w-[30%]">
+          <div
+            className="absolute left-[58%] top-[22%] w-[30%]"
+            style={{ transform: 'rotate(-28deg)', transformOrigin: 'center center' }}
+          >
             <LowPolyCar
               type={byId.C.vehicle.type}
               color={byId.C.vehicle.color}
