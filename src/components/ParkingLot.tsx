@@ -82,26 +82,26 @@ export function ParkingLot({
           </>
         )}
 
-        {/* Upright nose-in bays — long axis vertical, cars rotate:0.
+        {/* Isometric bays matching parking-lot.webp tilt; cars use iso sprites, no CSS rotate.
             With lot sprite, fills stay mostly transparent so the plate shows through. */}
         <Bay
-          points="24,72 116,72 116,188 24,188"
+          points="40,78 128,68 112,188 24,198"
           label="A"
-          labelAt={[70, 130]}
+          labelAt={[76, 135]}
           dim
           plate={Boolean(LOT_BACKGROUND_SPRITE)}
         />
         <Bay
-          points="136,72 228,72 228,188 136,188"
+          points="148,70 236,60 220,180 132,190"
           label="B"
-          labelAt={[182, 130]}
+          labelAt={[184, 128]}
           dim
           plate={Boolean(LOT_BACKGROUND_SPRITE)}
         />
         <Bay
-          points="248,72 340,72 340,188 248,188"
+          points="256,62 344,52 328,172 240,182"
           label="C"
-          labelAt={[294, 130]}
+          labelAt={[292, 120]}
           highlight={selected === 'C' || animPhase === 'drift' || animPhase === 'charging'}
           pulse={animPhase === 'charging'}
           active
@@ -114,7 +114,7 @@ export function ParkingLot({
         {/* Spot A parked */}
         {byId.A?.occupied && byId.A.vehicle && (
           <div
-            className="absolute left-[3%] top-[34%] w-[26%]"
+            className="absolute left-[4%] top-[36%] w-[26%]"
             style={{
               filter: 'saturate(0.7)',
               opacity: 0.85,
@@ -138,8 +138,8 @@ export function ParkingLot({
             <motion.div
               key="anim-car"
               className="absolute w-[30%]"
-              initial={{ left: '60%', top: '72%', opacity: 1, rotate: 0 }}
-              animate={{ left: '60%', top: '34%', opacity: 1, rotate: 0 }}
+              initial={{ left: '58%', top: '70%', opacity: 1, rotate: 0 }}
+              animate={{ left: '58%', top: '36%', opacity: 1, rotate: 0 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
               style={{ transformOrigin: 'center center' }}
@@ -156,7 +156,7 @@ export function ParkingLot({
         </AnimatePresence>
 
         {!animPhase && byId.C?.occupied && byId.C.vehicle && (
-          <div className="absolute left-[60%] top-[34%] w-[26%]">
+          <div className="absolute left-[58%] top-[36%] w-[26%]">
             <LowPolyCar
               pose="park"
               type={byId.C.vehicle.type}
