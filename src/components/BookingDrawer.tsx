@@ -24,6 +24,9 @@ const PERIODS: TimePeriod[] = ['morning', 'noon', 'evening']
 const COLORS = Object.keys(VEHICLE_COLOR_LABELS) as VehicleColor[]
 const TYPES = Object.keys(VEHICLE_TYPE_LABELS) as VehicleType[]
 
+/** STYLE-GUIDE §6: drawer down 220–280ms ease-out */
+const DRAWER_MS = 0.25
+
 export function BookingDrawer({
   open,
   initialVehicle,
@@ -63,63 +66,92 @@ export function BookingDrawer({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
+            transition={{ duration: DRAWER_MS, ease: 'easeOut' }}
             onClick={onClose}
           />
           <motion.div
-            className="fixed inset-x-0 bottom-0 z-50 mx-auto max-w-[420px] rounded-t-3xl bg-zinc-900 shadow-2xl"
+            className="fixed inset-x-0 bottom-0 z-50 mx-auto max-w-[420px] rounded-t-3xl shadow-2xl"
+            style={{ background: 'var(--ui-shell-top, #181820)' }}
             initial={{ y: '100%' }}
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
-            transition={{ type: 'spring', stiffness: 320, damping: 32 }}
+            transition={{ duration: DRAWER_MS, ease: 'easeOut' }}
             role="dialog"
             aria-modal
           >
-            <div className="mx-auto mt-2 h-1 w-10 rounded-full bg-zinc-600" />
+            <div
+              className="mx-auto mt-2 h-1 w-10 rounded-full"
+              style={{ background: 'var(--ui-track, #303038)' }}
+            />
 
             <div className="px-5 pb-6 pt-3">
-              {/* huge date */}
               <div className="mb-4 text-center">
-                <p className="text-[11px] font-semibold tracking-widest text-zinc-400">
+                <p
+                  className="text-[11px] font-semibold tracking-widest"
+                  style={{ color: 'var(--ui-muted)' }}
+                >
                   {huge.year} · {huge.weekday}
                 </p>
-                <h2 className="text-4xl font-black leading-none tracking-tight text-white">
+                <h2
+                  className="text-4xl font-black leading-none tracking-tight"
+                  style={{ color: 'var(--ui-text)' }}
+                >
                   {huge.dateLine}
                 </h2>
-                <p className="mt-1 text-[11px] text-zinc-500">预约日 · {todayISO()}</p>
+                <p className="mt-1 text-[11px]" style={{ color: 'var(--ui-muted)' }}>
+                  预约日 · {todayISO()}
+                </p>
               </div>
 
-              {/* preview car */}
-              <div className="mb-4 flex justify-center rounded-2xl bg-zinc-800/80 py-2">
+              <div
+                className="mb-4 flex justify-center rounded-2xl py-2"
+                style={{ background: 'var(--ui-card, #202028)' }}
+              >
                 <LowPolyCar type={type} color={color} size={100} />
               </div>
 
-              {/* 早 / 中 / 晚 */}
-              <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-zinc-400">
+              <p
+                className="mb-2 text-[11px] font-bold uppercase tracking-wider"
+                style={{ color: 'var(--ui-muted)' }}
+              >
                 时段
               </p>
               <div className="mb-4 grid grid-cols-3 gap-2">
-                {PERIODS.map((p) => (
-                  <button
-                    key={p}
-                    type="button"
-                    onClick={() => setPeriod(p)}
-                    className={`rounded-2xl py-3 text-center transition ${
-                      period === p
-                        ? 'bg-sky-500 text-white shadow-lg shadow-sky-500/30'
-                        : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
-                    }`}
-                  >
-                    <div className="text-2xl font-black">{PERIOD_LABELS[p]}</div>
-                    <div className="text-[10px] font-medium opacity-80">
-                      {PERIOD_HINTS[p]}
-                    </div>
-                  </button>
-                ))}
+                {PERIODS.map((p) => {
+                  const on = period === p
+                  return (
+                    <button
+                      key={p}
+                      type="button"
+                      onClick={() => setPeriod(p)}
+                      className="rounded-2xl py-3 text-center transition"
+                      style={
+                        on
+                          ? {
+                              background: 'var(--ui-accent)',
+                              color: '#0a0a0a',
+                              boxShadow: '0 8px 24px color-mix(in srgb, var(--ui-accent) 35%, transparent)',
+                            }
+                          : {
+                              background: 'var(--ui-card)',
+                              color: 'var(--ui-text)',
+                            }
+                      }
+                    >
+                      <div className="text-2xl font-black">{PERIOD_LABELS[p]}</div>
+                      <div className="text-[10px] font-medium opacity-80">
+                        {PERIOD_HINTS[p]}
+                      </div>
+                    </button>
+                  )
+                })}
               </div>
 
-              {/* vehicle fields */}
               <label className="mb-3 block">
-                <span className="mb-1 block text-[11px] font-bold text-zinc-400">
+                <span
+                  className="mb-1 block text-[11px] font-bold"
+                  style={{ color: 'var(--ui-muted)' }}
+                >
                   车牌号
                 </span>
                 <input
@@ -127,25 +159,33 @@ export function BookingDrawer({
                   onChange={(e) => setPlate(e.target.value.toUpperCase())}
                   placeholder="例如 沪A12345"
                   maxLength={10}
-                  className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-3 py-2.5 text-sm font-semibold text-white outline-none focus:border-sky-500"
+                  className="w-full rounded-xl border px-3 py-2.5 text-sm font-semibold outline-none"
+                  style={{
+                    borderColor: 'var(--ui-track)',
+                    background: '#0a0a0c',
+                    color: 'var(--ui-text)',
+                  }}
                 />
               </label>
 
-              <p className="mb-1.5 text-[11px] font-bold text-zinc-400">车辆颜色</p>
+              <p
+                className="mb-1.5 text-[11px] font-bold"
+                style={{ color: 'var(--ui-muted)' }}
+              >
+                车辆颜色
+              </p>
               <div className="mb-3 flex flex-wrap gap-2">
                 {COLORS.map((c) => (
                   <button
                     key={c}
                     type="button"
                     onClick={() => setColor(c)}
-                    className={`flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[11px] font-bold ${
-                      color === c
-                        ? 'ring-2 ring-sky-400 ring-offset-1 ring-offset-zinc-900'
-                        : ''
-                    }`}
+                    className="flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[11px] font-bold"
                     style={{
                       background: VEHICLE_PALETTE[c].body,
                       color: c === 'white' || c === 'yellow' ? '#111' : '#fff',
+                      boxShadow:
+                        color === c ? '0 0 0 2px #fff, 0 0 0 4px var(--ui-accent)' : undefined,
                     }}
                   >
                     {VEHICLE_COLOR_LABELS[c]}
@@ -153,29 +193,46 @@ export function BookingDrawer({
                 ))}
               </div>
 
-              <p className="mb-1.5 text-[11px] font-bold text-zinc-400">车辆类型</p>
+              <p
+                className="mb-1.5 text-[11px] font-bold"
+                style={{ color: 'var(--ui-muted)' }}
+              >
+                车辆类型
+              </p>
               <div className="mb-5 grid grid-cols-4 gap-1.5">
-                {TYPES.map((t) => (
-                  <button
-                    key={t}
-                    type="button"
-                    onClick={() => setType(t)}
-                    className={`rounded-xl py-2 text-[11px] font-bold ${
-                      type === t
-                        ? 'bg-white text-zinc-900'
-                        : 'bg-zinc-800 text-zinc-300'
-                    }`}
-                  >
-                    {VEHICLE_TYPE_LABELS[t]}
-                  </button>
-                ))}
+                {TYPES.map((t) => {
+                  const on = type === t
+                  return (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => setType(t)}
+                      className="rounded-xl py-2 text-[11px] font-bold"
+                      style={
+                        on
+                          ? { background: '#fff', color: '#0a0a0a' }
+                          : {
+                              background: 'var(--ui-card)',
+                              color: 'var(--ui-text)',
+                            }
+                      }
+                    >
+                      {VEHICLE_TYPE_LABELS[t]}
+                    </button>
+                  )
+                })}
               </div>
 
               <button
                 type="button"
                 disabled={confirming}
                 onClick={() => onConfirm(period, vehicle)}
-                className="w-full rounded-2xl bg-gradient-to-r from-sky-500 to-cyan-400 py-3.5 text-[15px] font-black text-zinc-950 shadow-lg disabled:opacity-60"
+                className="w-full rounded-2xl py-3.5 text-[15px] font-black disabled:opacity-60"
+                style={{
+                  background: 'var(--ui-accent)',
+                  color: '#0a0a0a',
+                  boxShadow: '0 10px 28px color-mix(in srgb, var(--ui-accent) 40%, transparent)',
+                }}
               >
                 {confirming ? '提交中…' : '确认预约'}
               </button>

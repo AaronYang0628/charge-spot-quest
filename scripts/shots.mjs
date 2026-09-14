@@ -19,17 +19,14 @@ await page.screenshot({
 console.log('saved mobile-main.png')
 
 const cBtn = await page.$('button[aria-label="预约车位 C"]')
-if (cBtn) {
-  await cBtn.click()
-} else {
-  throw new Error('spot C button not found')
-}
+if (!cBtn) throw new Error('spot C button not found')
+await cBtn.click()
 
 await page.waitForFunction(
   () => document.body.innerText.includes('确认预约') && document.body.innerText.includes('早'),
   { timeout: 8000 },
 )
-await new Promise((r) => setTimeout(r, 600))
+await new Promise((r) => setTimeout(r, 500))
 
 await page.screenshot({
   path: '/workspace/charge-spot-quest/screenshots/mobile-drawer.png',
@@ -37,7 +34,6 @@ await page.screenshot({
 })
 console.log('saved mobile-drawer.png')
 
-// fill plate + confirm
 await page.evaluate(() => {
   const input = document.querySelector('input')
   if (input) {
@@ -46,18 +42,19 @@ await page.evaluate(() => {
     input.dispatchEvent(new Event('input', { bubbles: true }))
   }
 })
-await new Promise((r) => setTimeout(r, 200))
+await new Promise((r) => setTimeout(r, 150))
 
 const confirm = await page.evaluateHandle(() =>
   [...document.querySelectorAll('button')].find((b) => b.textContent?.includes('确认预约')),
 )
-if (confirm) await confirm.asElement()?.click()
+await confirm.asElement()?.click()
 
+// drawer 250 + drift 600 + result 180 ≈ 1030ms
 await page.waitForFunction(
   () => document.body.innerText.includes('预约结果'),
-  { timeout: 8000 },
+  { timeout: 12000 },
 )
-await new Promise((r) => setTimeout(r, 900))
+await new Promise((r) => setTimeout(r, 400))
 
 await page.screenshot({
   path: '/workspace/charge-spot-quest/screenshots/mobile-confirm.png',

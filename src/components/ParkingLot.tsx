@@ -45,12 +45,12 @@ export function ParkingLot({
       >
         <defs>
           <linearGradient id="lotGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#3a3d42" />
-            <stop offset="100%" stopColor="#2a2c30" />
+            <stop offset="0%" stopColor="var(--lot-asphalt-top)" />
+            <stop offset="100%" stopColor="var(--lot-asphalt-bottom)" />
           </linearGradient>
           <linearGradient id="curbGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#9ca3af" />
-            <stop offset="100%" stopColor="#6b7280" />
+            <stop offset="0%" stopColor="var(--lot-curb-top)" />
+            <stop offset="100%" stopColor="var(--lot-curb-bottom)" />
           </linearGradient>
         </defs>
 
@@ -66,21 +66,21 @@ export function ParkingLot({
           <g key={i}>
             <polygon
               points={`${x},${y + 14} ${x + 10},${y} ${x + 20},${y + 14}`}
-              fill="#4a9c3f"
+              fill="var(--lot-bush)"
             />
             <polygon
               points={`${x + 10},${y} ${x + 20},${y + 14} ${x + 14},${y + 14}`}
-              fill="#2f6e2a"
+              fill="var(--lot-bush-shade)"
             />
           </g>
         ))}
 
         {/* streetlights */}
         <g>
-          <rect x="70" y="8" width="3" height="28" fill="#8b9099" />
-          <rect x="64" y="6" width="15" height="5" fill="#aeb4be" />
-          <rect x="310" y="6" width="3" height="28" fill="#8b9099" />
-          <rect x="304" y="4" width="15" height="5" fill="#aeb4be" />
+          <rect x="70" y="8" width="3" height="28" fill="var(--lot-pole)" />
+          <rect x="64" y="6" width="15" height="5" fill="var(--lot-lamp)" />
+          <rect x="310" y="6" width="3" height="28" fill="var(--lot-pole)" />
+          <rect x="304" y="4" width="15" height="5" fill="var(--lot-lamp)" />
         </g>
 
         {/* three bays — isometric-ish parallelograms */}
@@ -101,6 +101,7 @@ export function ParkingLot({
           label="C"
           labelAt={[298, 85]}
           highlight={selected === 'C' || animPhase === 'drift' || animPhase === 'charging'}
+          pulse={animPhase === 'charging'}
           active
         />
 
@@ -114,7 +115,10 @@ export function ParkingLot({
       <div className="pointer-events-none absolute inset-0">
         {/* Spot A parked */}
         {byId.A?.occupied && byId.A.vehicle && (
-          <div className="absolute left-[8%] top-[28%] w-[28%] opacity-55">
+          <div
+            className="absolute left-[8%] top-[28%] w-[28%]"
+            style={{ filter: 'saturate(0.7)', opacity: 0.85 }}
+          >
             <LowPolyCar
               type={byId.A.vehicle.type}
               color={byId.A.vehicle.color}
@@ -131,18 +135,11 @@ export function ParkingLot({
             <motion.div
               key="anim-car"
               className="absolute w-[30%]"
-              initial={
-                animPhase === 'drift'
-                  ? { left: '78%', top: '8%', opacity: 0, rotate: -12 }
-                  : { left: '58%', top: '22%', opacity: 1, rotate: -6 }
-              }
-              animate={
-                animPhase === 'drift' || animPhase === 'charging'
-                  ? { left: '58%', top: '22%', opacity: 1, rotate: -6 }
-                  : { left: '58%', top: '22%', opacity: 1 }
-              }
-              exit={{ opacity: 0, scale: 0.9 }}
-              transition={{ type: 'spring', stiffness: 120, damping: 16, mass: 0.9 }}
+              initial={{ left: '82%', top: '4%', opacity: 1, rotate: -10 }}
+              animate={{ left: '58%', top: '22%', opacity: 1, rotate: -6 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+              style={{ transformOrigin: 'center center' }}
             >
               <LowPolyCar
                 type={animVehicle.type}
@@ -183,7 +180,10 @@ export function ParkingLot({
         维护中
       </span>
       {byId.C?.bookable && !byId.C.occupied && !animPhase && (
-        <span className="absolute right-[12%] top-[64%] rounded bg-sky-500/90 px-1.5 py-0.5 text-[10px] font-black text-white shadow">
+        <span
+          className="absolute right-[12%] top-[64%] rounded px-1.5 py-0.5 text-[10px] font-black shadow"
+          style={{ background: 'var(--ui-accent)', color: '#0a0a0a' }}
+        >
           可约 · 点我
         </span>
       )}
@@ -198,6 +198,7 @@ function Bay({
   dim,
   highlight,
   active,
+  pulse,
 }: {
   points: string
   label: string
@@ -205,21 +206,23 @@ function Bay({
   dim?: boolean
   highlight?: boolean
   active?: boolean
+  pulse?: boolean
 }) {
   return (
     <g opacity={dim ? 0.55 : 1}>
       <polygon
         points={points}
-        fill={highlight ? '#3d4550' : '#32363c'}
-        stroke={highlight ? '#7dd3fc' : '#e8e8e4'}
+        fill={highlight ? 'var(--lot-bay-fill-active)' : 'var(--lot-bay-fill)'}
+        stroke={highlight ? 'var(--lot-bay-line-active)' : (dim ? 'var(--lot-bay-line-maint)' : 'var(--lot-bay-line)')}
         strokeWidth={highlight ? 2.5 : 1.8}
+        className={pulse ? 'bay-pulse' : undefined}
       />
       {/* inner dashed feel via thinner inset isn't needed — white bay outline */}
       <text
         x={labelAt[0]}
         y={labelAt[1]}
         textAnchor="middle"
-        fill={active ? '#e2e8f0' : '#9ca3af'}
+        fill={active ? '#e2e8f0' : 'var(--lot-curb-top)'}
         fontSize="22"
         fontWeight="800"
         fontFamily="system-ui, sans-serif"
@@ -234,8 +237,8 @@ function Bay({
 function Charger({ x, y, broken }: { x: number; y: number; broken?: boolean }) {
   return (
     <g transform={`translate(${x},${y})`}>
-      <rect x="0" y="0" width="10" height="22" fill={broken ? '#6b7280' : '#38bdf8'} />
-      <rect x="1.5" y="2" width="7" height="6" fill={broken ? '#4b5563' : '#fde047'} />
+      <rect x="0" y="0" width="10" height="22" fill={broken ? 'var(--lot-charger-broken)' : 'var(--lot-charger)'} />
+      <rect x="1.5" y="2" width="7" height="6" fill={broken ? '#4b5563' : 'var(--car-bolt)'} />
       {!broken && (
         <path d="M4 10 L7 14 L5.5 14 L7 18 L3.5 13.5 L5 13.5 Z" fill="#fff" />
       )}

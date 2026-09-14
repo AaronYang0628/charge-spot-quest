@@ -36,15 +36,15 @@ export function LowPolyCar({
         charging
           ? {
               filter: [
-                'drop-shadow(0 0 0px rgba(56,189,248,0))',
-                'drop-shadow(0 0 10px rgba(56,189,248,0.85))',
-                'drop-shadow(0 0 4px rgba(250,204,21,0.7))',
-                'drop-shadow(0 0 10px rgba(56,189,248,0.85))',
+                'drop-shadow(0 0 6px rgba(0,172,244,0.55))',
+                'drop-shadow(0 0 12px rgba(0,204,240,0.9))',
+                'drop-shadow(0 0 8px rgba(253,224,71,0.85))',
+                'drop-shadow(0 0 12px rgba(0,172,244,0.9))',
               ],
             }
           : undefined
       }
-      transition={charging ? { duration: 1.4, repeat: Infinity } : undefined}
+      transition={charging ? { duration: 1.3, repeat: Infinity, ease: 'easeInOut' } : undefined}
     >
       {sprite ? (
         <img

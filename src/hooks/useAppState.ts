@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { api } from '../api/client'
 import type {
   AppState,
@@ -7,11 +7,15 @@ import type {
   TimePeriod,
   VehicleInfo,
 } from '../types'
-import { DEFAULT_VEHICLE } from '../types'
 import { clearAllData, loadState, saveState, saveVehicle } from '../lib/storage'
 import { todayISO } from '../lib/time'
 
-export type AnimPhase = 'idle' | 'drift' | 'charging' | null
+/** STYLE-GUIDE §6 motion phases */
+export type AnimPhase = 'drift' | 'charging' | null
+
+const DRAWER_EXIT_MS = 250
+const DRIFT_MS = 600
+const RESULT_AFTER_CHARGE_MS = 180
 
 export function useAppState() {
   const [state, setState] = useState<AppState>(() => loadState())
@@ -21,6 +25,14 @@ export function useAppState() {
   const [animPhase, setAnimPhase] = useState<AnimPhase>(null)
   const [confirming, setConfirming] = useState(false)
   const [result, setResult] = useState<BookResult | null>(null)
+  const timers = useRef<number[]>([])
+
+  const clearTimers = () => {
+    timers.current.forEach((id) => window.clearTimeout(id))
+    timers.current = []
+  }
+
+  useEffect(() => () => clearTimers(), [])
 
   useEffect(() => {
     saveState(state)
@@ -38,26 +50,22 @@ export function useAppState() {
   const openDrawer = useCallback(() => {
     const c = spots.find((s) => s.id === 'C')
     if (!c?.bookable || c.occupied) {
-      setResult({ ok: false, reason: c?.occupied ? '车位 C 当前被占用' : '车位暂不可约' })
+      setResult({
+        ok: false,
+        reason: c?.occupied ? '车位 C 当前被占用' : '车位暂不可约',
+      })
       return
     }
-    // drift-in with saved vehicle or default
-    const v = state.vehicle ?? DEFAULT_VEHICLE
-    setAnimVehicle(v)
-    setAnimPhase('drift')
     setDrawerOpen(true)
-  }, [spots, state.vehicle])
+  }, [spots])
 
   const closeDrawer = useCallback(() => {
     setDrawerOpen(false)
-    // if not confirming success, clear drift unless charging
-    setAnimPhase((p) => (p === 'charging' ? p : null))
   }, [])
 
   const confirm = useCallback(
     async (period: TimePeriod, vehicle: VehicleInfo) => {
       setConfirming(true)
-      setAnimVehicle(vehicle)
       saveVehicle(vehicle)
       setState((s) => ({ ...s, vehicle }))
 
@@ -69,22 +77,51 @@ export function useAppState() {
       })
 
       setConfirming(false)
-      setDrawerOpen(false)
+      clearTimers()
 
-      if (res.ok && res.booking) {
-        setState((s) => ({
-          ...s,
-          bookings: [...s.bookings, res.booking!],
-          vehicle,
-        }))
-        setAnimPhase('charging')
-        setResult({ ok: true, reason: '预约成功，车位开始充电', booking: res.booking })
-        await refreshSpots()
-      } else {
+      if (!res.ok || !res.booking) {
+        setDrawerOpen(false)
         setAnimPhase(null)
         setAnimVehicle(null)
         setResult({ ok: false, reason: res.reason || '预约失败' })
+        return
       }
+
+      setState((s) => ({
+        ...s,
+        bookings: [...s.bookings, res.booking!],
+        vehicle,
+      }))
+
+      // 1) drawer slides down (250ms ease-out)
+      setDrawerOpen(false)
+      setAnimVehicle(vehicle)
+
+      // 2) after drawer exit → rigid drift into bay C (600ms)
+      timers.current.push(
+        window.setTimeout(() => {
+          setAnimPhase('drift')
+        }, DRAWER_EXIT_MS),
+      )
+
+      // 3) after drift → charge pulse
+      timers.current.push(
+        window.setTimeout(() => {
+          setAnimPhase('charging')
+          void refreshSpots()
+        }, DRAWER_EXIT_MS + DRIFT_MS),
+      )
+
+      // 4) result modal ~180ms after charge starts
+      timers.current.push(
+        window.setTimeout(() => {
+          setResult({
+            ok: true,
+            reason: '预约成功，车位开始充电',
+            booking: res.booking,
+          })
+        }, DRAWER_EXIT_MS + DRIFT_MS + RESULT_AFTER_CHARGE_MS),
+      )
     },
     [refreshSpots, state.sessionId],
   )
@@ -94,12 +131,14 @@ export function useAppState() {
   }, [])
 
   const resetAll = useCallback(async () => {
+    clearTimers()
     clearAllData()
     await api.resetDemo()
     setState(loadState())
     setAnimPhase(null)
     setAnimVehicle(null)
     setResult(null)
+    setDrawerOpen(false)
     await refreshSpots()
   }, [refreshSpots])
 

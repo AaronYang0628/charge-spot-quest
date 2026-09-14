@@ -1,16 +1,16 @@
 /**
- * ART DIRECTOR HOOKS — temporary low-poly placeholders live below.
- * Replace values / point sprite URLs here when the style guide arrives.
- * Components read these via CSS vars; do not hardcode final art elsewhere.
+ * ART DIRECTOR HOOKS — values synced to design-refs/art-direction/STYLE-GUIDE.md
+ * Temporary SVG placeholders until sprites register in assets/art-slots.ts
  */
 :root {
-  /* Lot scene */
-  --lot-asphalt-top: #3a3d42;
-  --lot-asphalt-bottom: #2a2c30;
-  --lot-bay-fill: #32363c;
+  /* Lot scene (STYLE-GUIDE §2 Scene) */
+  --lot-asphalt-top: #505058;
+  --lot-asphalt-bottom: #182030;
+  --lot-bay-fill: #505058;
   --lot-bay-fill-active: #3d4550;
   --lot-bay-line: #e8e8e4;
   --lot-bay-line-active: #7dd3fc;
+  --lot-bay-line-maint: #586068;
   --lot-curb-top: #9ca3af;
   --lot-curb-bottom: #6b7280;
   --lot-bush: #4a9c3f;
@@ -19,72 +19,52 @@
   --lot-lamp: #aeb4be;
   --lot-charger: #38bdf8;
   --lot-charger-broken: #6b7280;
+  --lot-warm-rim: #f8d8b0;
 
-  /* UI chrome (not vehicle art) */
-  --ui-bg: #121417;
-  --ui-shell-top: #1a1d22;
-  --ui-card: rgba(39, 39, 42, 0.9);
-  --ui-accent: #0ea5e9;
-  --ui-success: #34d399;
+  /* UI chrome (STYLE-GUIDE §2 UI) */
+  --ui-bg: #101010;
+  --ui-shell-top: #181820;
+  --ui-card: #202028;
+  --ui-accent: #00acf4;
+  --ui-accent-hot: #00ccf0;
+  --ui-success: #00d490;
   --ui-warn: #f59e0b;
   --ui-text: #f4f4f5;
-  --ui-muted: #71717a;
+  --ui-muted: #787878;
+  --ui-track: #303038;
+  --ui-maint-pill: #404048;
 
-  /* Vehicle body placeholders — swap or override per Art Director palette */
-  --car-blue: #2f6bff;
-  --car-blue-light: #5b8cff;
-  --car-blue-dark: #1a3fa8;
-  --car-yellow: #f5c518;
-  --car-yellow-light: #ffe066;
-  --car-yellow-dark: #c49200;
-  --car-orange: #f07a1a;
-  --car-orange-light: #ff9a45;
-  --car-orange-dark: #b84e00;
-  --car-white: #f2f2f0;
-  --car-white-light: #ffffff;
-  --car-white-dark: #c8c8c4;
+  /* Vehicle body light/body/shade (STYLE-GUIDE §2 Vehicle) */
+  --car-blue: #0088d0;
+  --car-blue-light: #5b9ad4;
+  --car-blue-dark: #002060;
+  --car-yellow: #d89000;
+  --car-yellow-light: #f0d000;
+  --car-yellow-dark: #804800;
+  --car-orange: #e89040;
+  --car-orange-light: #f0b000;
+  --car-orange-dark: #b85000;
+  --car-white: #f0e0d8;
+  --car-white-light: #f8f8f8;
+  --car-white-dark: #c8b8a0;
   --car-red: #e23b2f;
-  --car-red-light: #ff6b5e;
-  --car-red-dark: #a01f16;
+  --car-red-light: #f80000;
+  --car-red-dark: #680000;
   --car-green: #3dbe3a;
-  --car-green-light: #6be068;
-  --car-green-dark: #248a22;
+  --car-green-light: #98b850;
+  --car-green-dark: #285000;
 
-  --car-window: #1c2026;
-  --car-window-front: #2a2e35;
+  --car-window: #1c2430;
+  --car-window-front: #2a3340;
   --car-shadow: rgba(10, 10, 10, 0.45);
   --car-wheel: #111111;
   --car-wheel-hub: #444444;
   --car-bolt: #fde047;
 
   /**
-   * Sprite slots (empty = use SVG placeholder in LowPolyCar).
-   * Example when art lands:
-   *   --sprite-sedan-blue: url('/art/vehicles/sedan-blue.webp');
+   * Sprite slots (empty = SVG placeholder).
+   * Register paths in assets/art-slots.ts when files land in public/art/vehicles/
    */
   --sprite-sedan-blue: ;
-  --sprite-sedan-yellow: ;
-  --sprite-sedan-orange: ;
-  --sprite-sedan-white: ;
-  --sprite-sedan-red: ;
-  --sprite-sedan-green: ;
-  --sprite-suv-blue: ;
-  --sprite-suv-yellow: ;
-  --sprite-suv-orange: ;
-  --sprite-suv-white: ;
-  --sprite-suv-red: ;
-  --sprite-suv-green: ;
-  --sprite-van-blue: ;
-  --sprite-van-yellow: ;
-  --sprite-van-orange: ;
-  --sprite-van-white: ;
-  --sprite-van-red: ;
-  --sprite-van-green: ;
-  --sprite-pickup-blue: ;
-  --sprite-pickup-yellow: ;
-  --sprite-pickup-orange: ;
-  --sprite-pickup-white: ;
-  --sprite-pickup-red: ;
-  --sprite-pickup-green: ;
-  --sprite-lot-bg: ; /* optional full-bleed lot plate */
+  --sprite-lot-bg: ;
 }

@@ -86,17 +86,17 @@ export const VEHICLE_COLOR_LABELS: Record<VehicleColor, string> = {
   green: '绿色',
 }
 
-/** Placeholder palette — keep in sync with --car-* in theme/tokens.css until Art Director palette lands */
+/** Locked palette (STYLE-GUIDE v1) — keep in sync with --car-* in theme/tokens.css */
 export const VEHICLE_PALETTE: Record<
   VehicleColor,
   { body: string; light: string; dark: string }
 > = {
-  blue: { body: '#2F6BFF', light: '#5B8CFF', dark: '#1A3FA8' },
-  yellow: { body: '#F5C518', light: '#FFE066', dark: '#C49200' },
-  orange: { body: '#F07A1A', light: '#FF9A45', dark: '#B84E00' },
-  white: { body: '#F2F2F0', light: '#FFFFFF', dark: '#C8C8C4' },
-  red: { body: '#E23B2F', light: '#FF6B5E', dark: '#A01F16' },
-  green: { body: '#3DBE3A', light: '#6BE068', dark: '#248A22' },
+  blue: { body: '#0088D0', light: '#5B9AD4', dark: '#002060' },
+  yellow: { body: '#D89000', light: '#F0D000', dark: '#804800' },
+  orange: { body: '#E89040', light: '#F0B000', dark: '#B85000' },
+  white: { body: '#F0E0D8', light: '#F8F8F8', dark: '#C8B8A0' },
+  red: { body: '#E23B2F', light: '#F80000', dark: '#680000' },
+  green: { body: '#3DBE3A', light: '#98B850', dark: '#285000' },
 }
 
 export const DEFAULT_VEHICLE: VehicleInfo = {

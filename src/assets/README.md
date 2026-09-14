@@ -1,13 +1,15 @@
 # Art slots (Game Art Director)
 
-Temporary SVG low-poly placeholders ship in `components/LowPolyCar.tsx` and `ParkingLot.tsx`.
+Binding guide: `design-refs/art-direction/STYLE-GUIDE.md`
 
-## Drop-in checklist
+Temporary SVG low-poly placeholders: `components/LowPolyCar.tsx`, `ParkingLot.tsx`.
 
-1. Export isometric vehicle sprites (transparent WebP/PNG) per `type × color`.
-2. Put files in `public/art/vehicles/` (or import into this folder).
-3. Register paths in `art-slots.ts` → `VEHICLE_SPRITES`.
-4. Optional lot plate → `LOT_BACKGROUND_SPRITE`.
-5. Tune palette / lot colors in `src/theme/tokens.css` (`--car-*`, `--lot-*`).
+## Drop-in
 
-Until sprites are registered, the app uses CSS-variable-driven SVG placeholders.
+1. Export isometric sprites `{type}-{color}.webp` (256×192, transparent).
+2. Place in `public/art/vehicles/`.
+3. Register in `art-slots.ts` → `VEHICLE_SPRITES` (e.g. `'sedan-blue': '/art/vehicles/sedan-blue.webp'`).
+4. Optional lot plate → `LOT_BACKGROUND_SPRITE` / `public/art/lot/lot-plate.webp`.
+5. Palette / chrome: `src/theme/tokens.css` (must match STYLE-GUIDE locked hex).
+
+Until registered, SVG placeholders use `--car-*` / `--lot-*` CSS vars.
