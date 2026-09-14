@@ -118,8 +118,6 @@ export function ParkingLot({
             style={{
               filter: 'saturate(0.7)',
               opacity: 0.85,
-              transform: 'rotate(180deg)',
-              transformOrigin: 'center center',
             }}
           >
             <LowPolyCar
@@ -140,8 +138,8 @@ export function ParkingLot({
             <motion.div
               key="anim-car"
               className="absolute w-[30%]"
-              initial={{ left: '60%', top: '72%', opacity: 1, rotate: 180 }}
-              animate={{ left: '60%', top: '34%', opacity: 1, rotate: 180 }}
+              initial={{ left: '60%', top: '72%', opacity: 1, rotate: 0 }}
+              animate={{ left: '60%', top: '34%', opacity: 1, rotate: 0 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
               style={{ transformOrigin: 'center center' }}
@@ -158,10 +156,7 @@ export function ParkingLot({
         </AnimatePresence>
 
         {!animPhase && byId.C?.occupied && byId.C.vehicle && (
-          <div
-            className="absolute left-[60%] top-[34%] w-[26%]"
-            style={{ transform: 'rotate(180deg)', transformOrigin: 'center center' }}
-          >
+          <div className="absolute left-[60%] top-[34%] w-[26%]">
             <LowPolyCar
               pose="park"
               type={byId.C.vehicle.type}
