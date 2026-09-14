@@ -18,7 +18,7 @@ interface Props {
 /** 3D plant-on-lot: Z yaw + X pitch (not flat CSS rotate only) */
 const CAR_PERSPECTIVE = 900
 const CAR_YAW_Z = -35 // deg, CCW on screen
-const CAR_PITCH_X = 18 // deg, tip into lot ground plane — tune with Aaron
+const CAR_PITCH_X = 58 // deg, tip into lot ground plane — tune with Aaron
 const carTransform = `perspective(${CAR_PERSPECTIVE}px) rotateX(${CAR_PITCH_X}deg) rotateZ(${CAR_YAW_Z}deg)`
 
 export function ParkingLot({
