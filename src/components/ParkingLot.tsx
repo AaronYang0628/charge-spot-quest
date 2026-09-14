@@ -115,12 +115,12 @@ export function ParkingLot({
         {byId.A?.occupied && byId.A.vehicle && (
           <div
             className="absolute left-[3%] top-[34%] w-[26%]"
-            style={
+            style={{
               filter: 'saturate(0.7)',
               opacity: 0.85,
               transform: 'rotate(48deg)',
               transformOrigin: 'center center',
-            }
+            }}
           >
             <LowPolyCar
               type={byId.A.vehicle.type}

@@ -40,3 +40,9 @@ isometric low-poly EV charger pedestal, body #5870C0, yellow lightning bolt #F0D
 
 ## Slice notes
 Same as v1: margin ≥8%, atlas after all 24 type×color, reject soft airbrush / faces.
+
+## G. Lot plate (environment — locked with v3 cars)
+```
+isometric orthographic parking lot game background, Synty POLYGON Starter Pack style, bright daylight, pale blue sky with hard-edged white clouds, tan low-poly hills behind, mid-grey asphalt, cream sand curb, exactly three upright rectangular parking bays side by side with thick white lines (long axis vertical), left and middle quieter, right bay with blue EV charger pedestal and yellow bolt, grey broken chargers on left two, faceted green bushes, grey lamp poles, hard shadows from upper-left, NO cars, NO people, NO text, empty stalls for overlays, soft light overall
+```
+Export `parking-lot.webp` at 780×440 (or 390×220 @1x). Register `LOT_BACKGROUND_SPRITE`.

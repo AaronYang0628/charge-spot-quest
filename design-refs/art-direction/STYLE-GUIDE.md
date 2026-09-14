@@ -115,7 +115,7 @@ CTA 「确认预约」 `#5870C0` / white text.
 
 ## 6. Confirm motion (same timing as v1)
 
-Drawer down 220–280ms → rigid drift into bay C 500–700ms → bay rim pulse `#5870C0` + bolt `#F0D000` → result modal on white card, success line `#3DBE3A`, 「知道了」 dark-on-light pill.
+Drawer down 220–280ms → rigid drift into bay C **along bay long axis** (yaw locked, no diagonal skew) 500–700ms → bay rim pulse `#5870C0` + bolt `#F0D000` → result modal on white card, success line `#3DBE3A`, 「知道了」 dark-on-light pill.
 
 ---
 
@@ -131,4 +131,49 @@ Prompt backdrops: **light cream / soft grey**, not charcoal.
 - Dark `#101010` app shell (v1)  
 - Q-cute anthropomorphic cars  
 - Soft purple clock-grid drawer  
-- Inventing hex outside this table without updating the guide  
+- Inventing hex outside this table without updating the guide
+
+---
+
+## 9. Locked vehicle art (v3 — final)
+
+Aaron signed off **2026-09-14**. Current WebPs in `public/art/vehicles/{type}-{color}.webp` are the final style: cohesive isometric low-poly cars (Synty Mini direction), solid silhouettes, flat faces, locked palette.
+
+**Do not change art direction again.** Later work is proportion / readability tweaks only (same mesh language, same palette).
+
+### Drift-in motion (updated)
+Vehicle enters bay **aligned with the bay long axis** — nose toward bay orientation, path follows the stall centerline. **Not** a diagonal skew / crab into the bay. Timing still ~500–700ms ease-out, rigid body, no squash.
+
+---
+
+## 10. Environment plate (v3 — matches locked cars)
+
+**Direction refs:** Synty [POLYGON Starter Pack](https://assetstore.unity.com/packages/3d/environments/polygon-starter-pack-art-by-synty-156819) (+ Mini City gallery under `design-refs/synty-mini-city/`, Starter shots under `design-refs/synty-starter/`).
+
+### Asset provenance (web-safe)
+Unity Asset Store packs are **style / composition reference only**. Do **not** import Unity package meshes, materials, or `.unitypackage` contents into this web repo. Ship redrawn or re-rendered **webp/png** (lot plate, vehicles, UI slices) owned for the private web project.
+
+
+**Delivered sprite:** `public/art/lot/parking-lot.webp` (780×440, 2× of viewBox 390×220). Registered as `LOT_BACKGROUND_SPRITE`.
+
+### Lot rules
+| Rule | Spec |
+|------|------|
+| Style | Same cohesive low-poly daylight as v3 cars — hard faces, crisp shadows, toy city readability |
+| Sky | Pale blue + hard-edged white cloud clusters |
+| Far ground | Tan low-poly hills / low buildings — not empty grey void |
+| Asphalt | Mid grey ~`#787878`–`#808080` (sampled from plate) |
+| Curb | Cream / sand `#E8D8C0` band |
+| Bays | Three **upright** rectangles, long axis vertical, thick white lines; A/B quieter, C with live charger |
+| Props | Faceted green bushes, grey lamp poles, blue charger `#5870C0` + yellow bolt on C; grey broken posts on A/B |
+| No cars on plate | Vehicles overlay via sprites; plate stays empty stalls |
+| Anti | Flat SVG triangle “trees”, barren gradient asphalt, dark cyber lot |
+
+### UI motifs (from Starter Pack, light chrome)
+Keep v2 light tokens. Absorb Starter geometry into chrome — do not go dark:
+
+- **Panels / cards:** white `#FFFFFF`, 1px `#E5E7EB`, optional hard offset shadow `2px 2px 0 #D4D4D8` (toy block, not soft blur)
+- **Primary button:** solid `#5870C0`, square-ish radius 10–12px, white label; pressed = `#4F6AD6`
+- **Progress tracks:** `#E4E4E7` with hard fill `#3DBE3A` / accent blue — no glossy gradients
+- **Pills / badges:** flat color blocks; maintenance = `#E4E4E7`; bookable = accent
+- **Optional decor:** tiny hard-edged chevron / bolt as SVG icons matching charger bolt — never soft Material ripples

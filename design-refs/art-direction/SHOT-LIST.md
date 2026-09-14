@@ -3,37 +3,37 @@
 Oldest gaps first. Check off when file exists in `public/art/vehicles/` and is registered in `art-slots.ts`.
 
 ## Vehicles (24)
-- [ ] sedan-blue (DEFAULT — do first)
-- [ ] sedan-yellow
-- [ ] sedan-orange
-- [ ] sedan-white
-- [ ] sedan-red
-- [ ] sedan-green
-- [ ] suv-blue
-- [ ] suv-yellow
-- [ ] suv-orange
-- [ ] suv-white
-- [ ] suv-red
-- [ ] suv-green
-- [ ] van-blue
-- [ ] van-yellow
-- [ ] van-orange
-- [ ] van-white
-- [ ] van-red
-- [ ] van-green
-- [ ] pickup-blue
-- [ ] pickup-yellow
-- [ ] pickup-orange
-- [ ] pickup-white
-- [ ] pickup-red
-- [ ] pickup-green
+- [x] sedan-blue (DEFAULT — do first)
+- [x] sedan-yellow
+- [x] sedan-orange
+- [x] sedan-white
+- [x] sedan-red
+- [x] sedan-green
+- [x] suv-blue
+- [x] suv-yellow
+- [x] suv-orange
+- [x] suv-white
+- [x] suv-red
+- [x] suv-green
+- [x] van-blue
+- [x] van-yellow
+- [x] van-orange
+- [x] van-white
+- [x] van-red
+- [x] van-green
+- [x] pickup-blue
+- [x] pickup-yellow
+- [x] pickup-orange
+- [x] pickup-white
+- [x] pickup-red
+- [x] pickup-green
 
 ## Props / environment
-- [ ] charger-post (bookable cyan)
-- [ ] charger-post-broken (grey)
-- [ ] lot-plate (optional; procedural SVG OK until then)
-- [ ] bush-cluster (optional prop)
-- [ ] lamp-pole (optional prop)
+- [x] charger-post (painted on lot plate; C live)
+- [x] charger-post-broken (painted on lot plate; A/B)
+- [x] lot-plate → public/art/lot/parking-lot.webp
+- [x] bush-cluster (on lot plate)
+- [x] lamp-pole (on lot plate)
 
 ## Specs already covered by code placeholders
 SVG LowPolyCar / ParkingLot remain until sprites register. No maint-specific sprites required if desaturate reads clearly at 96px.
