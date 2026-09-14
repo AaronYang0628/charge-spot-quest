@@ -263,17 +263,6 @@ function Bay({
 }
 
 
-function BarrierProp() {
-  return (
-    <img
-      src="/art/props/barrier.webp"
-      alt=""
-      className="block w-full"
-      draggable={false}
-      style={{ objectFit: 'contain' }}
-    />
-  )
-}
 
 function Charger({ x, y, broken }: { x: number; y: number; broken?: boolean }) {
   return (
