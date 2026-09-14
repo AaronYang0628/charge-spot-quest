@@ -1,0 +1,90 @@
+/**
+ * ART DIRECTOR HOOKS — temporary low-poly placeholders live below.
+ * Replace values / point sprite URLs here when the style guide arrives.
+ * Components read these via CSS vars; do not hardcode final art elsewhere.
+ */
+:root {
+  /* Lot scene */
+  --lot-asphalt-top: #3a3d42;
+  --lot-asphalt-bottom: #2a2c30;
+  --lot-bay-fill: #32363c;
+  --lot-bay-fill-active: #3d4550;
+  --lot-bay-line: #e8e8e4;
+  --lot-bay-line-active: #7dd3fc;
+  --lot-curb-top: #9ca3af;
+  --lot-curb-bottom: #6b7280;
+  --lot-bush: #4a9c3f;
+  --lot-bush-shade: #2f6e2a;
+  --lot-pole: #8b9099;
+  --lot-lamp: #aeb4be;
+  --lot-charger: #38bdf8;
+  --lot-charger-broken: #6b7280;
+
+  /* UI chrome (not vehicle art) */
+  --ui-bg: #121417;
+  --ui-shell-top: #1a1d22;
+  --ui-card: rgba(39, 39, 42, 0.9);
+  --ui-accent: #0ea5e9;
+  --ui-success: #34d399;
+  --ui-warn: #f59e0b;
+  --ui-text: #f4f4f5;
+  --ui-muted: #71717a;
+
+  /* Vehicle body placeholders — swap or override per Art Director palette */
+  --car-blue: #2f6bff;
+  --car-blue-light: #5b8cff;
+  --car-blue-dark: #1a3fa8;
+  --car-yellow: #f5c518;
+  --car-yellow-light: #ffe066;
+  --car-yellow-dark: #c49200;
+  --car-orange: #f07a1a;
+  --car-orange-light: #ff9a45;
+  --car-orange-dark: #b84e00;
+  --car-white: #f2f2f0;
+  --car-white-light: #ffffff;
+  --car-white-dark: #c8c8c4;
+  --car-red: #e23b2f;
+  --car-red-light: #ff6b5e;
+  --car-red-dark: #a01f16;
+  --car-green: #3dbe3a;
+  --car-green-light: #6be068;
+  --car-green-dark: #248a22;
+
+  --car-window: #1c2026;
+  --car-window-front: #2a2e35;
+  --car-shadow: rgba(10, 10, 10, 0.45);
+  --car-wheel: #111111;
+  --car-wheel-hub: #444444;
+  --car-bolt: #fde047;
+
+  /**
+   * Sprite slots (empty = use SVG placeholder in LowPolyCar).
+   * Example when art lands:
+   *   --sprite-sedan-blue: url('/art/vehicles/sedan-blue.webp');
+   */
+  --sprite-sedan-blue: ;
+  --sprite-sedan-yellow: ;
+  --sprite-sedan-orange: ;
+  --sprite-sedan-white: ;
+  --sprite-sedan-red: ;
+  --sprite-sedan-green: ;
+  --sprite-suv-blue: ;
+  --sprite-suv-yellow: ;
+  --sprite-suv-orange: ;
+  --sprite-suv-white: ;
+  --sprite-suv-red: ;
+  --sprite-suv-green: ;
+  --sprite-van-blue: ;
+  --sprite-van-yellow: ;
+  --sprite-van-orange: ;
+  --sprite-van-white: ;
+  --sprite-van-red: ;
+  --sprite-van-green: ;
+  --sprite-pickup-blue: ;
+  --sprite-pickup-yellow: ;
+  --sprite-pickup-orange: ;
+  --sprite-pickup-white: ;
+  --sprite-pickup-red: ;
+  --sprite-pickup-green: ;
+  --sprite-lot-bg: ; /* optional full-bleed lot plate */
+}
