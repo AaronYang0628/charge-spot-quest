@@ -2,11 +2,13 @@ import type { ReactNode } from 'react'
 import { motion } from 'framer-motion'
 import type { VehicleColor, VehicleType } from '../types'
 import { VEHICLE_PALETTE } from '../types'
-import { vehicleSpriteUrl } from '../assets/art-slots'
+import { vehicleSpriteUrl, type VehiclePose } from '../assets/art-slots'
 
 interface Props {
   type?: VehicleType
   color?: VehicleColor
+  /** display = three-quarter; park = reverse-in vertical (tail up / nose down) */
+  pose?: VehiclePose
   charging?: boolean
   className?: string
   size?: number
@@ -20,18 +22,21 @@ interface Props {
 export function LowPolyCar({
   type = 'sedan',
   color = 'blue',
+  pose = 'display',
   charging = false,
   className = '',
   size = 120,
 }: Props) {
-  const sprite = vehicleSpriteUrl(type, color)
+  const sprite = vehicleSpriteUrl(type, color, pose)
   const pal = VEHICLE_PALETTE[color]
   const Body = BODIES[type]
+  // display sprites ~256x192; park sprites ~192x256 (portrait, reverse-in)
+  const aspectH = pose === 'park' ? (size * 256) / 192 : (size * 90) / 120
 
   return (
     <motion.div
       className={className}
-      style={{ width: size, height: (size * 90) / 120, position: 'relative' }}
+      style={{ width: size, height: aspectH, position: 'relative' }}
       animate={
         charging
           ? {
@@ -51,7 +56,7 @@ export function LowPolyCar({
           src={sprite}
           alt=""
           width={size}
-          height={(size * 90) / 120}
+          height={aspectH}
           draggable={false}
           style={{ display: 'block', objectFit: 'contain' }}
         />
@@ -73,7 +78,13 @@ export function LowPolyCar({
           viewBox="0 0 40 40"
           width={28}
           height={28}
-          style={{ position: 'absolute', top: '8%', right: '18%' }}
+          style={{
+            position: 'absolute',
+            top: pose === 'park' ? '6%' : '8%',
+            left: pose === 'park' ? '50%' : undefined,
+            right: pose === 'park' ? undefined : '18%',
+            transform: pose === 'park' ? 'translateX(-50%)' : undefined,
+          }}
           animate={{ opacity: [0.4, 1, 0.55, 1], scale: [0.9, 1.08, 0.95, 1] }}
           transition={{ duration: 0.9, repeat: Infinity }}
         >

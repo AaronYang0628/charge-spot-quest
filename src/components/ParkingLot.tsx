@@ -118,14 +118,13 @@ export function ParkingLot({
             style={{
               filter: 'saturate(0.7)',
               opacity: 0.85,
-              transform: 'rotate(48deg)',
-              transformOrigin: 'center center',
             }}
           >
             <LowPolyCar
+              pose="park"
               type={byId.A.vehicle.type}
               color={byId.A.vehicle.color}
-              size={110}
+              size={96}
             />
           </div>
         )}
@@ -139,17 +138,18 @@ export function ParkingLot({
             <motion.div
               key="anim-car"
               className="absolute w-[30%]"
-              initial={{ left: '60%', top: '72%', opacity: 1, rotate: 48 }}
-              animate={{ left: '60%', top: '34%', opacity: 1, rotate: 48 }}
+              initial={{ left: '60%', top: '72%', opacity: 1, rotate: 0 }}
+              animate={{ left: '60%', top: '34%', opacity: 1, rotate: 0 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
               style={{ transformOrigin: 'center center' }}
             >
               <LowPolyCar
+                pose="park"
                 type={animVehicle.type}
                 color={animVehicle.color}
                 charging={animPhase === 'charging'}
-                size={120}
+                size={104}
               />
             </motion.div>
           )}
@@ -161,10 +161,11 @@ export function ParkingLot({
             style={{ transform: 'rotate(48deg)', transformOrigin: 'center center' }}
           >
             <LowPolyCar
+              pose="park"
               type={byId.C.vehicle.type}
               color={byId.C.vehicle.color}
               charging
-              size={120}
+              size={104}
             />
           </div>
         )}
