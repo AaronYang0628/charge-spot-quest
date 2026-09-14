@@ -1,5 +1,7 @@
 # 充电车位小站 · Charge Spot Quest
 
+> **需求与问题清单（权威）：** [docs/REQUIREMENTS-AND-ISSUES.md](docs/REQUIREMENTS-AND-ISSUES.md)
+
 Mobile-first slow-charge booking demo — **low-poly** parking lot UX (Vite + React + TS + Tailwind + Framer Motion).
 
 ## UX
@@ -12,10 +14,10 @@ Mobile-first slow-charge booking demo — **low-poly** parking lot UX (Vite + Re
 
 ## Visual
 
-Temporary SVG low-poly placeholders (not final art). Art Director drop-in:
-`src/theme/tokens.css`, `src/assets/art-slots.ts`, `src/assets/README.md`.
+Synty-inspired low-poly (light theme). Lot plate + vehicle/barrier webps under `public/art/`.  
+Art direction: `design-refs/art-direction/`. Tokens: `src/theme/tokens.css`.
 
-SVG hard-edged low-poly cars (flat shaded faces, saturated colors, crisp shadows) on a dark-grey lot — see `design-refs/`.
+**Known gap:** car↔lot perspective alignment — see requirements doc §4.1.
 
 ## Dev
 
