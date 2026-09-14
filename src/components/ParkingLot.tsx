@@ -156,10 +156,7 @@ export function ParkingLot({
         </AnimatePresence>
 
         {!animPhase && byId.C?.occupied && byId.C.vehicle && (
-          <div
-            className="absolute left-[60%] top-[34%] w-[26%]"
-            style={{ transform: 'rotate(48deg)', transformOrigin: 'center center' }}
-          >
+          <div className="absolute left-[60%] top-[34%] w-[26%]">
             <LowPolyCar
               pose="park"
               type={byId.C.vehicle.type}
