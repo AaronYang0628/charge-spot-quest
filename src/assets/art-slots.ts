@@ -1,3 +1,4 @@
+import { asset } from '../lib/asset'
 /**
  * Art Director asset registry — STYLE-GUIDE v2/v3.
  * display: three-quarter sprites `{type}-{color}.webp`
@@ -17,7 +18,7 @@ function build(suffix: '' | '-park'): Partial<Record<VehicleSpriteKey, string>> 
   for (const t of TYPES) {
     for (const c of COLORS) {
       const key = `${t}-${c}` as VehicleSpriteKey
-      out[key] = `/art/vehicles/${t === 'convertible' ? 'sedan' : t}-${c}${suffix}.webp`
+      out[key] = asset(`/art/vehicles/${t === 'convertible' ? 'sedan' : t}-${c}${suffix}.webp`)
     }
   }
   return out
@@ -26,7 +27,7 @@ function build(suffix: '' | '-park'): Partial<Record<VehicleSpriteKey, string>> 
 export const VEHICLE_SPRITES = build('')
 export const VEHICLE_PARK_SPRITES = build('-park')
 
-export const LOT_BACKGROUND_SPRITE: string | null = '/art/lot/parking-lot.webp'
+export const LOT_BACKGROUND_SPRITE: string | null = asset('/art/lot/parking-lot.webp')
 
 export function vehicleSpriteUrl(
   type: VehicleType,

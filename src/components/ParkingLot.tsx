@@ -5,6 +5,7 @@ import type { SpotStatus, VehicleInfo } from '../types'
 import type { AnimPhase } from '../hooks/useAppState'
 import { SceneBoundary } from './SceneBoundary'
 import { usePageVisible } from '../hooks/usePageVisible'
+import { asset } from '../lib/asset'
 const LotScene = lazy(() => import('./LotScene'))
 interface Props {
   spots: SpotStatus[]; animVehicle: VehicleInfo | null; animPhase: AnimPhase
@@ -26,7 +27,7 @@ export function ParkingLot({ spots, animVehicle, animPhase, paused, onSelectC, o
     const timeout = window.setTimeout(onFinished, 12000)
     return () => clearTimeout(timeout)
   }, [animPhase, onFinished, visible])
-  const fallback = <div className="scene-fallback"><img src="/art/lot/parking-lot.webp" alt="三车位停车场，A、B维护中" /><p>场景暂不可用，仍可预约</p></div>
+  const fallback = <div className="scene-fallback"><img src={asset('/art/lot/parking-lot.webp')} alt="三车位停车场，A、B维护中" /><p>场景暂不可用，仍可预约</p></div>
   return <section aria-label="三维停车场" className="scene-section">
     <div className="scene-toolbar"><span>THE LITTLE TOWN <b>／ 小镇慢充</b></span><span className="daylight">☀ 日光正好</span></div>
     <div className={`scene-canvas ${adjust ? 'adjusting' : ''}`}>

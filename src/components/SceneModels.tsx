@@ -3,9 +3,10 @@ import { useGLTF } from '@react-three/drei'
 import { Mesh, MeshStandardMaterial, Object3D } from 'three'
 import type { VehicleInfo } from '../types'
 import { VEHICLE_PALETTE } from '../types'
+import { asset } from '../lib/asset'
 
 function useModel(name: string, color?: string) {
-  const { scene } = useGLTF(`/models/${name}.glb`)
+  const { scene } = useGLTF(asset(`/models/${name}.glb`))
   const model = useMemo(() => {
     const clone = scene.clone(true)
     clone.traverse(o => {

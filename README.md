@@ -2,7 +2,7 @@
 
 > **需求与问题清单（权威）：** [docs/REQUIREMENTS-AND-ISSUES.md](docs/REQUIREMENTS-AND-ISSUES.md)
 
-Mobile-first slow-charge booking demo — **low-poly** parking lot UX (Vite + React + TS + Tailwind + Framer Motion).
+Mobile-first slow-charge booking demo — **low-poly / little-town 3D** parking lot UX (Vite + React + TS + Tailwind + Framer Motion + React Three Fiber).
 
 ## UX
 
@@ -12,12 +12,14 @@ Mobile-first slow-charge booking demo — **low-poly** parking lot UX (Vite + Re
 - Confirm → car **drifts in** → **charging glow** → **预约结果** toast.
 - No login / payment. Mock API in `src/api/`. Session id in localStorage (`charge-spot-quest-v3`).
 
+## Demo
+
+GitHub Pages: https://aaronyang0628.github.io/charge-spot-quest/
+
 ## Visual
 
-Synty-inspired low-poly (light theme). Lot plate + vehicle/barrier webps under `public/art/`.  
+v1 Codex build: real-time **Three.js / R3F** lot (`LotScene`) with GLB vehicles/props under `public/models/`, plus 2D webp fallback under `public/art/`.  
 Art direction: `design-refs/art-direction/`. Tokens: `src/theme/tokens.css`.
-
-**Known gap:** car↔lot perspective alignment — see requirements doc §4.1.
 
 ## Dev
 
