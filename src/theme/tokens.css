@@ -1,40 +1,43 @@
 /**
- * ART DIRECTOR HOOKS — values synced to design-refs/art-direction/STYLE-GUIDE.md
- * Temporary SVG placeholders until sprites register in assets/art-slots.ts
+ * ART DIRECTION v2 — light / Synty Mini City Pack direction.
+ * Source: design-refs/art-direction/STYLE-GUIDE.md
  */
 :root {
-  /* Lot scene (STYLE-GUIDE §2 Scene) */
-  --lot-asphalt-top: #505058;
-  --lot-asphalt-bottom: #182030;
-  --lot-bay-fill: #505058;
-  --lot-bay-fill-active: #3d4550;
-  --lot-bay-line: #e8e8e4;
-  --lot-bay-line-active: #7dd3fc;
-  --lot-bay-line-maint: #586068;
-  --lot-curb-top: #9ca3af;
-  --lot-curb-bottom: #6b7280;
-  --lot-bush: #4a9c3f;
-  --lot-bush-shade: #2f6e2a;
-  --lot-pole: #8b9099;
+  /* Lot scene — daylight */
+  --lot-asphalt-top: #7a7a82;
+  --lot-asphalt-bottom: #707070;
+  --lot-bay-fill: #62626a;
+  --lot-bay-fill-active: #585860;
+  --lot-bay-line: #f8f8f8;
+  --lot-bay-line-active: #5870c0;
+  --lot-bay-line-maint: #a1a1aa;
+  --lot-curb-top: #d8d0a8;
+  --lot-curb-bottom: #b8a888;
+  --lot-bush: #a0b848;
+  --lot-bush-shade: #485828;
+  --lot-pole: #9ca3af;
   --lot-lamp: #aeb4be;
-  --lot-charger: #38bdf8;
-  --lot-charger-broken: #6b7280;
-  --lot-warm-rim: #f8d8b0;
+  --lot-charger: #5870c0;
+  --lot-charger-broken: #9ca3af;
+  --lot-cream: #f0f0d0;
 
-  /* UI chrome (STYLE-GUIDE §2 UI) */
-  --ui-bg: #101010;
-  --ui-shell-top: #181820;
-  --ui-card: #202028;
-  --ui-accent: #00acf4;
-  --ui-accent-hot: #00ccf0;
-  --ui-success: #00d490;
-  --ui-warn: #f59e0b;
-  --ui-text: #f4f4f5;
-  --ui-muted: #787878;
-  --ui-track: #303038;
-  --ui-maint-pill: #404048;
+  /* UI chrome — light / white */
+  --ui-bg: #f5f5f7;
+  --ui-shell-top: #ffffff;
+  --ui-card: #ffffff;
+  --ui-border: #e5e7eb;
+  --ui-track: #e4e4e7;
+  --ui-tile: #f4f4f5;
+  --ui-handle: #d4d4d8;
+  --ui-maint-pill: #e4e4e7;
+  --ui-accent: #5870c0;
+  --ui-accent-hot: #4f6ad6;
+  --ui-success: #3dbe3a;
+  --ui-warn: #e89040;
+  --ui-text: #18181b;
+  --ui-muted: #71717a;
 
-  /* Vehicle body light/body/shade (STYLE-GUIDE §2 Vehicle) */
+  /* Vehicle body — light / body / shade */
   --car-blue: #0088d0;
   --car-blue-light: #5b9ad4;
   --car-blue-dark: #002060;
@@ -56,15 +59,34 @@
 
   --car-window: #1c2430;
   --car-window-front: #2a3340;
-  --car-shadow: rgba(10, 10, 10, 0.45);
+  --car-shadow: rgba(24, 24, 32, 0.32);
   --car-wheel: #111111;
   --car-wheel-hub: #444444;
   --car-bolt: #fde047;
 
-  /**
-   * Sprite slots (empty = SVG placeholder).
-   * Register paths in assets/art-slots.ts when files land in public/art/vehicles/
-   */
   --sprite-sedan-blue: ;
+  --sprite-sedan-yellow: ;
+  --sprite-sedan-orange: ;
+  --sprite-sedan-white: ;
+  --sprite-sedan-red: ;
+  --sprite-sedan-green: ;
+  --sprite-suv-blue: ;
+  --sprite-suv-yellow: ;
+  --sprite-suv-orange: ;
+  --sprite-suv-white: ;
+  --sprite-suv-red: ;
+  --sprite-suv-green: ;
+  --sprite-van-blue: ;
+  --sprite-van-yellow: ;
+  --sprite-van-orange: ;
+  --sprite-van-white: ;
+  --sprite-van-red: ;
+  --sprite-van-green: ;
+  --sprite-pickup-blue: ;
+  --sprite-pickup-yellow: ;
+  --sprite-pickup-orange: ;
+  --sprite-pickup-white: ;
+  --sprite-pickup-red: ;
+  --sprite-pickup-green: ;
   --sprite-lot-bg: ;
 }

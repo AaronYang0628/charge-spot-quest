@@ -63,7 +63,7 @@ export function LowPolyCar({
           style={{ overflow: 'visible', display: 'block' }}
           data-art-placeholder="lowpoly-svg"
         >
-          <ellipse cx="60" cy="78" rx="38" ry="7" fill="var(--car-shadow, #0a0a0a)" opacity="0.45" />
+          <ellipse cx="60" cy="78" rx="38" ry="7" fill="var(--car-shadow)" opacity="1" />
           <Body pal={pal} />
         </svg>
       )}

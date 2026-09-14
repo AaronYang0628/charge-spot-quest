@@ -25,6 +25,7 @@ export function SpotBars({ spot }: Props) {
       className="space-y-1.5 rounded-xl px-2.5 py-2"
       style={{
         background: 'var(--ui-card)',
+        border: '1px solid var(--ui-border)',
         opacity: spot.maintenance ? 0.72 : 1,
       }}
     >
@@ -45,14 +46,14 @@ export function SpotBars({ spot }: Props) {
         ) : spot.occupied ? (
           <span
             className="rounded px-1.5 py-0.5 text-[9px] font-bold"
-            style={{ background: 'var(--ui-warn)', color: '#0a0a0a' }}
+            style={{ background: 'var(--ui-warn)', color: '#ffffff' }}
           >
             占用中
           </span>
         ) : (
           <span
             className="rounded px-1.5 py-0.5 text-[9px] font-bold"
-            style={{ background: 'var(--ui-accent)', color: '#0a0a0a' }}
+            style={{ background: 'var(--ui-accent)', color: '#ffffff' }}
           >
             可预约
           </span>

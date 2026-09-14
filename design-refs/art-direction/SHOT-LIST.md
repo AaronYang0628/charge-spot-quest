@@ -1,4 +1,5 @@
-# Shot list — still missing
+# Shot list — still missing (v2 light theme; sprites unchanged)
+
 Oldest gaps first. Check off when file exists in `public/art/vehicles/` and is registered in `art-slots.ts`.
 
 ## Vehicles (24)

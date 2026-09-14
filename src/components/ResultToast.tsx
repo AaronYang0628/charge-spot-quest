@@ -12,7 +12,7 @@ export function ResultToast({ open, ok, message, onClose }: Props) {
     <AnimatePresence>
       {open && (
         <motion.div
-          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 px-6"
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 px-6"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -21,14 +21,17 @@ export function ResultToast({ open, ok, message, onClose }: Props) {
         >
           <motion.div
             className="w-full max-w-sm rounded-3xl p-6 text-center shadow-2xl"
-            style={{ background: 'var(--ui-shell-top, #181820)' }}
+            style={{
+              background: 'var(--ui-shell-top, #ffffff)',
+              border: '1px solid var(--ui-border)',
+            }}
             initial={{ scale: 0.92, y: 12, opacity: 0 }}
             animate={{ scale: 1, y: 0, opacity: 1 }}
             exit={{ scale: 0.95, opacity: 0 }}
             transition={{ duration: 0.18, ease: 'easeOut' }}
             onClick={(e) => e.stopPropagation()}
           >
-            {/* white bolt — no confetti / no cute faces */}
+            {/* bolt — no confetti / no cute faces */}
             <svg
               viewBox="0 0 40 40"
               width={40}
@@ -38,7 +41,7 @@ export function ResultToast({ open, ok, message, onClose }: Props) {
             >
               <path
                 d="M22 4 L12 20 L20 20 L10 36 L30 16 L21 16 Z"
-                fill="#F4F4F5"
+                fill={ok ? '#F0D000' : '#f87171'}
               />
             </svg>
             <h3
@@ -57,7 +60,11 @@ export function ResultToast({ open, ok, message, onClose }: Props) {
               type="button"
               onClick={onClose}
               className="mt-5 w-full rounded-2xl py-2.5 text-sm font-bold"
-              style={{ background: '#fff', color: '#0a0a0a' }}
+              style={{
+                background: 'var(--ui-tile, #f4f4f5)',
+                color: 'var(--ui-text)',
+                border: '1px solid var(--ui-border)',
+              }}
             >
               知道了
             </button>

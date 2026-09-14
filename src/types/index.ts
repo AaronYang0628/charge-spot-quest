@@ -86,7 +86,7 @@ export const VEHICLE_COLOR_LABELS: Record<VehicleColor, string> = {
   green: '绿色',
 }
 
-/** Locked palette (STYLE-GUIDE v1) — keep in sync with --car-* in theme/tokens.css */
+/** Locked palette (STYLE-GUIDE v2 — bodies unchanged) — keep in sync with --car-* in theme/tokens.css */
 export const VEHICLE_PALETTE: Record<
   VehicleColor,
   { body: string; light: string; dark: string }

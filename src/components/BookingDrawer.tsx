@@ -62,7 +62,7 @@ export function BookingDrawer({
           <motion.button
             type="button"
             aria-label="关闭"
-            className="fixed inset-0 z-40 bg-black/55"
+            className="fixed inset-0 z-40 bg-black/40"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -71,7 +71,10 @@ export function BookingDrawer({
           />
           <motion.div
             className="fixed inset-x-0 bottom-0 z-50 mx-auto max-w-[420px] rounded-t-3xl shadow-2xl"
-            style={{ background: 'var(--ui-shell-top, #181820)' }}
+            style={{
+              background: 'var(--ui-shell-top, #ffffff)',
+              borderTop: '1px solid var(--ui-border)',
+            }}
             initial={{ y: '100%' }}
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
@@ -81,7 +84,7 @@ export function BookingDrawer({
           >
             <div
               className="mx-auto mt-2 h-1 w-10 rounded-full"
-              style={{ background: 'var(--ui-track, #303038)' }}
+              style={{ background: 'var(--ui-handle, #d4d4d8)' }}
             />
 
             <div className="px-5 pb-6 pt-3">
@@ -105,7 +108,10 @@ export function BookingDrawer({
 
               <div
                 className="mb-4 flex justify-center rounded-2xl py-2"
-                style={{ background: 'var(--ui-card, #202028)' }}
+                style={{
+                  background: 'var(--ui-tile, #f4f4f5)',
+                  border: '1px solid var(--ui-border)',
+                }}
               >
                 <LowPolyCar type={type} color={color} size={100} />
               </div>
@@ -129,11 +135,12 @@ export function BookingDrawer({
                         on
                           ? {
                               background: 'var(--ui-accent)',
-                              color: '#0a0a0a',
-                              boxShadow: '0 8px 24px color-mix(in srgb, var(--ui-accent) 35%, transparent)',
+                              color: '#ffffff',
+                              boxShadow:
+                                '0 8px 24px color-mix(in srgb, var(--ui-accent) 35%, transparent)',
                             }
                           : {
-                              background: 'var(--ui-card)',
+                              background: 'var(--ui-tile, #f4f4f5)',
                               color: 'var(--ui-text)',
                             }
                       }
@@ -161,8 +168,8 @@ export function BookingDrawer({
                   maxLength={10}
                   className="w-full rounded-xl border px-3 py-2.5 text-sm font-semibold outline-none"
                   style={{
-                    borderColor: 'var(--ui-track)',
-                    background: '#0a0a0c',
+                    borderColor: 'var(--ui-border)',
+                    background: 'var(--ui-shell-top, #ffffff)',
                     color: 'var(--ui-text)',
                   }}
                 />
@@ -185,7 +192,9 @@ export function BookingDrawer({
                       background: VEHICLE_PALETTE[c].body,
                       color: c === 'white' || c === 'yellow' ? '#111' : '#fff',
                       boxShadow:
-                        color === c ? '0 0 0 2px #fff, 0 0 0 4px var(--ui-accent)' : undefined,
+                        color === c
+                          ? '0 0 0 2px #fff, 0 0 0 4px var(--ui-text)'
+                          : undefined,
                     }}
                   >
                     {VEHICLE_COLOR_LABELS[c]}
@@ -210,9 +219,12 @@ export function BookingDrawer({
                       className="rounded-xl py-2 text-[11px] font-bold"
                       style={
                         on
-                          ? { background: '#fff', color: '#0a0a0a' }
+                          ? {
+                              background: 'var(--ui-accent)',
+                              color: '#ffffff',
+                            }
                           : {
-                              background: 'var(--ui-card)',
+                              background: 'var(--ui-tile, #f4f4f5)',
                               color: 'var(--ui-text)',
                             }
                       }
@@ -230,8 +242,9 @@ export function BookingDrawer({
                 className="w-full rounded-2xl py-3.5 text-[15px] font-black disabled:opacity-60"
                 style={{
                   background: 'var(--ui-accent)',
-                  color: '#0a0a0a',
-                  boxShadow: '0 10px 28px color-mix(in srgb, var(--ui-accent) 40%, transparent)',
+                  color: '#ffffff',
+                  boxShadow:
+                    '0 10px 28px color-mix(in srgb, var(--ui-accent) 40%, transparent)',
                 }}
               >
                 {confirming ? '提交中…' : '确认预约'}

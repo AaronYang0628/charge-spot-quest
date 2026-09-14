@@ -13,7 +13,7 @@ interface Props {
 }
 
 /**
- * High-angle low-poly parking lot: dark asphalt, white bay lines, crisp shadows.
+ * High-angle low-poly parking lot: daylight asphalt, white bay lines, hard shadows.
  */
 export function ParkingLot({
   spots,
@@ -59,7 +59,7 @@ export function ParkingLot({
 
         {/* sidewalk / curb top */}
         <polygon points="0,0 390,0 390,28 0,36" fill="url(#curbGrad)" />
-        <polygon points="0,36 390,28 390,34 0,42" fill="#5b616a" />
+        <polygon points="0,36 390,28 390,34 0,42" fill="var(--lot-curb-bottom)" />
 
         {/* bushes — green pyramids */}
         {[[18, 22], [48, 18], [340, 20], [368, 24]].map(([x, y], i) => (
@@ -173,16 +173,22 @@ export function ParkingLot({
       />
 
       {/* maintenance badges */}
-      <span className="absolute left-[14%] top-[62%] rounded bg-black/55 px-1.5 py-0.5 text-[10px] font-bold text-white/90">
+      <span
+        className="absolute left-[14%] top-[62%] rounded px-1.5 py-0.5 text-[10px] font-bold"
+        style={{ background: 'var(--ui-maint-pill)', color: 'var(--ui-muted)' }}
+      >
         维护中
       </span>
-      <span className="absolute left-[40%] top-[58%] rounded bg-black/55 px-1.5 py-0.5 text-[10px] font-bold text-white/90">
+      <span
+        className="absolute left-[40%] top-[58%] rounded px-1.5 py-0.5 text-[10px] font-bold"
+        style={{ background: 'var(--ui-maint-pill)', color: 'var(--ui-muted)' }}
+      >
         维护中
       </span>
       {byId.C?.bookable && !byId.C.occupied && !animPhase && (
         <span
           className="absolute right-[12%] top-[64%] rounded px-1.5 py-0.5 text-[10px] font-black shadow"
-          style={{ background: 'var(--ui-accent)', color: '#0a0a0a' }}
+          style={{ background: 'var(--ui-accent)', color: '#ffffff' }}
         >
           可约 · 点我
         </span>
@@ -213,16 +219,21 @@ function Bay({
       <polygon
         points={points}
         fill={highlight ? 'var(--lot-bay-fill-active)' : 'var(--lot-bay-fill)'}
-        stroke={highlight ? 'var(--lot-bay-line-active)' : (dim ? 'var(--lot-bay-line-maint)' : 'var(--lot-bay-line)')}
+        stroke={
+          highlight
+            ? 'var(--lot-bay-line-active)'
+            : dim
+              ? 'var(--lot-bay-line-maint)'
+              : 'var(--lot-bay-line)'
+        }
         strokeWidth={highlight ? 2.5 : 1.8}
         className={pulse ? 'bay-pulse' : undefined}
       />
-      {/* inner dashed feel via thinner inset isn't needed — white bay outline */}
       <text
         x={labelAt[0]}
         y={labelAt[1]}
         textAnchor="middle"
-        fill={active ? '#e2e8f0' : 'var(--lot-curb-top)'}
+        fill={active ? '#f8f8f8' : 'var(--lot-curb-top)'}
         fontSize="22"
         fontWeight="800"
         fontFamily="system-ui, sans-serif"
@@ -237,17 +248,29 @@ function Bay({
 function Charger({ x, y, broken }: { x: number; y: number; broken?: boolean }) {
   return (
     <g transform={`translate(${x},${y})`}>
-      <rect x="0" y="0" width="10" height="22" fill={broken ? 'var(--lot-charger-broken)' : 'var(--lot-charger)'} />
-      <rect x="1.5" y="2" width="7" height="6" fill={broken ? '#4b5563' : 'var(--car-bolt)'} />
+      <rect
+        x="0"
+        y="0"
+        width="10"
+        height="22"
+        fill={broken ? 'var(--lot-charger-broken)' : 'var(--lot-charger)'}
+      />
+      <rect
+        x="1.5"
+        y="2"
+        width="7"
+        height="6"
+        fill={broken ? '#9ca3af' : 'var(--car-bolt)'}
+      />
       {!broken && (
         <path d="M4 10 L7 14 L5.5 14 L7 18 L3.5 13.5 L5 13.5 Z" fill="#fff" />
       )}
       {broken && (
-        <text x="5" y="17" textAnchor="middle" fontSize="7" fill="#ddd">
+        <text x="5" y="17" textAnchor="middle" fontSize="7" fill="#585860">
           ✕
         </text>
       )}
-      <rect x="2" y="22" width="6" height="4" fill="#1f2937" />
+      <rect x="2" y="22" width="6" height="4" fill="#585860" />
     </g>
   )
 }
