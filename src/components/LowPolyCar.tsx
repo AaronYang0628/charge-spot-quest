@@ -31,7 +31,8 @@ export function LowPolyCar({
   const pal = VEHICLE_PALETTE[color]
   const Body = BODIES[type]
   // display sprites ~256x192; park sprites ~192x256 (portrait, reverse-in)
-  const aspectH = pose === 'park' ? (size * 256) / 192 : (size * 90) / 120
+  // Main + park webps are reverse-in portrait (192×256); display three-quarter retired
+  const aspectH = (size * 256) / 192
 
   return (
     <motion.div
