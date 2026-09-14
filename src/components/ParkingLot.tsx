@@ -179,6 +179,14 @@ export function ParkingLot({
         style={{ cursor: byId.C?.bookable ? 'pointer' : 'not-allowed' }}
       />
 
+      {/* 维护中：路障（非石柱）— A/B bay heads */}
+      <div className="pointer-events-none absolute left-[8%] top-[30%] w-[18%]">
+        <BarrierProp />
+      </div>
+      <div className="pointer-events-none absolute left-[36%] top-[30%] w-[18%]">
+        <BarrierProp />
+      </div>
+
       {/* maintenance badges */}
       <span
         className="absolute left-[10%] top-[72%] rounded px-1.5 py-0.5 text-[10px] font-bold"
@@ -259,6 +267,26 @@ function Bay({
         {label}
       </text>
     </g>
+  )
+}
+
+
+function BarrierProp() {
+  return (
+    <svg viewBox="0 0 80 56" className="block w-full" style={{ overflow: 'visible' }}>
+      <ellipse cx="40" cy="50" rx="28" ry="5" fill="rgba(0,0,0,0.18)" />
+      {/* striped construction barricade */}
+      <rect x="8" y="22" width="64" height="14" rx="2" fill="#F5F5F5" stroke="#3F3F46" strokeWidth="1.5" />
+      <rect x="8" y="22" width="16" height="14" fill="#F59E0B" />
+      <rect x="40" y="22" width="16" height="14" fill="#F59E0B" />
+      <rect x="8" y="22" width="64" height="14" rx="2" fill="none" stroke="#3F3F46" strokeWidth="1.5" />
+      {/* legs */}
+      <rect x="14" y="36" width="5" height="14" fill="#71717A" />
+      <rect x="61" y="36" width="5" height="14" fill="#71717A" />
+      {/* cone accent */}
+      <polygon points="72,48 78,48 75,28" fill="#F97316" stroke="#9A3412" strokeWidth="0.8" />
+      <rect x="72.5" y="46" width="5" height="3" fill="#F5F5F5" />
+    </svg>
   )
 }
 
