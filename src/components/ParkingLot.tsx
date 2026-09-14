@@ -112,7 +112,7 @@ export function ParkingLot({
       {/* cars layered as HTML/SVG over the lot for easier animation */}
       <div className="pointer-events-none absolute inset-0">
         {/* Spot A parked */}
-        {byId.A?.occupied && byId.A.vehicle && (
+        {byId.A?.occupied && !byId.A.maintenance && byId.A.vehicle && (
           <div
             className="absolute left-[4%] top-[36%] w-[26%]"
             style={{
@@ -155,7 +155,7 @@ export function ParkingLot({
           )}
         </AnimatePresence>
 
-        {!animPhase && byId.C?.occupied && byId.C.vehicle && (
+        {!animPhase && byId.C?.occupied && !byId.C.maintenance && byId.C.vehicle && (
           <div className="absolute left-[58%] top-[36%] w-[26%]">
             <LowPolyCar
               pose="park"
