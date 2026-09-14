@@ -28,88 +28,85 @@ export function ParkingLot({
   >
 
   return (
-    <div className="lot-wrap relative mx-auto w-full overflow-hidden rounded-2xl" data-art-slot="parking-lot">
+    <div className="lot-wrap relative mx-auto aspect-[390/220] w-full overflow-hidden rounded-2xl" data-art-slot="parking-lot">
       {LOT_BACKGROUND_SPRITE ? (
         <img
           src={LOT_BACKGROUND_SPRITE}
           alt=""
-          className="absolute inset-0 h-full w-full object-cover"
+          className="absolute inset-0 h-full w-full object-fill"
           draggable={false}
         />
       ) : null}
-      {/* TEMP: procedural SVG lot — replace via LOT_BACKGROUND_SPRITE */}
+      {/* Bay overlays + fallback procedural env when no LOT_BACKGROUND_SPRITE */}
       <svg
         viewBox="0 0 390 220"
-        className="block w-full"
+        className="relative block w-full"
         preserveAspectRatio="xMidYMid slice"
       >
-        <defs>
-          <linearGradient id="lotGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="var(--lot-asphalt-top)" />
-            <stop offset="100%" stopColor="var(--lot-asphalt-bottom)" />
-          </linearGradient>
-          <linearGradient id="curbGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="var(--lot-curb-top)" />
-            <stop offset="100%" stopColor="var(--lot-curb-bottom)" />
-          </linearGradient>
-        </defs>
+        {!LOT_BACKGROUND_SPRITE && (
+          <>
+            <defs>
+              <linearGradient id="lotGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="var(--lot-asphalt-top)" />
+                <stop offset="100%" stopColor="var(--lot-asphalt-bottom)" />
+              </linearGradient>
+              <linearGradient id="curbGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="var(--lot-curb-top)" />
+                <stop offset="100%" stopColor="var(--lot-curb-bottom)" />
+              </linearGradient>
+            </defs>
+            <rect x="0" y="0" width="390" height="220" fill="url(#lotGrad)" />
+            <polygon points="0,0 390,0 390,28 0,36" fill="url(#curbGrad)" />
+            <polygon points="0,36 390,28 390,34 0,42" fill="var(--lot-curb-bottom)" />
+            {[[18, 22], [48, 18], [340, 20], [368, 24]].map(([x, y], i) => (
+              <g key={i}>
+                <polygon
+                  points={`${x},${y + 14} ${x + 10},${y} ${x + 20},${y + 14}`}
+                  fill="var(--lot-bush)"
+                />
+                <polygon
+                  points={`${x + 10},${y} ${x + 20},${y + 14} ${x + 14},${y + 14}`}
+                  fill="var(--lot-bush-shade)"
+                />
+              </g>
+            ))}
+            <g>
+              <rect x="70" y="8" width="3" height="28" fill="var(--lot-pole)" />
+              <rect x="64" y="6" width="15" height="5" fill="var(--lot-lamp)" />
+              <rect x="310" y="6" width="3" height="28" fill="var(--lot-pole)" />
+              <rect x="304" y="4" width="15" height="5" fill="var(--lot-lamp)" />
+            </g>
+            <Charger x={74} y={48} broken />
+            <Charger x={186} y={48} broken />
+            <Charger x={298} y={48} />
+          </>
+        )}
 
-        {/* asphalt */}
-        <rect x="0" y="0" width="390" height="220" fill="url(#lotGrad)" />
-
-        {/* sidewalk / curb top */}
-        <polygon points="0,0 390,0 390,28 0,36" fill="url(#curbGrad)" />
-        <polygon points="0,36 390,28 390,34 0,42" fill="var(--lot-curb-bottom)" />
-
-        {/* bushes — green pyramids */}
-        {[[18, 22], [48, 18], [340, 20], [368, 24]].map(([x, y], i) => (
-          <g key={i}>
-            <polygon
-              points={`${x},${y + 14} ${x + 10},${y} ${x + 20},${y + 14}`}
-              fill="var(--lot-bush)"
-            />
-            <polygon
-              points={`${x + 10},${y} ${x + 20},${y + 14} ${x + 14},${y + 14}`}
-              fill="var(--lot-bush-shade)"
-            />
-          </g>
-        ))}
-
-        {/* streetlights */}
-        <g>
-          <rect x="70" y="8" width="3" height="28" fill="var(--lot-pole)" />
-          <rect x="64" y="6" width="15" height="5" fill="var(--lot-lamp)" />
-          <rect x="310" y="6" width="3" height="28" fill="var(--lot-pole)" />
-          <rect x="304" y="4" width="15" height="5" fill="var(--lot-lamp)" />
-        </g>
-
-        {/* three bays — isometric-ish parallelograms */}
-        {/* Upright nose-in bays — long axis vertical, cars rotate:0 */}
+        {/* Upright nose-in bays — long axis vertical, cars rotate:0.
+            With lot sprite, fills stay mostly transparent so the plate shows through. */}
         <Bay
-          points="36,55 128,55 128,165 36,165"
+          points="24,72 116,72 116,188 24,188"
           label="A"
-          labelAt={[82, 110]}
+          labelAt={[70, 130]}
           dim
+          plate={Boolean(LOT_BACKGROUND_SPRITE)}
         />
         <Bay
-          points="148,55 240,55 240,165 148,165"
+          points="136,72 228,72 228,188 136,188"
           label="B"
-          labelAt={[194, 110]}
+          labelAt={[182, 130]}
           dim
+          plate={Boolean(LOT_BACKGROUND_SPRITE)}
         />
         <Bay
-          points="260,55 352,55 352,165 260,165"
+          points="248,72 340,72 340,188 248,188"
           label="C"
-          labelAt={[306, 110]}
+          labelAt={[294, 130]}
           highlight={selected === 'C' || animPhase === 'drift' || animPhase === 'charging'}
           pulse={animPhase === 'charging'}
           active
+          plate={Boolean(LOT_BACKGROUND_SPRITE)}
         />
-
-        {/* charger posts */}
-        <Charger x={74} y={48} broken />
-        <Charger x={186} y={48} broken />
-        <Charger x={298} y={48} />
       </svg>
 
       {/* cars layered as HTML/SVG over the lot for easier animation */}
@@ -117,7 +114,7 @@ export function ParkingLot({
         {/* Spot A parked */}
         {byId.A?.occupied && byId.A.vehicle && (
           <div
-            className="absolute left-[6%] top-[26%] w-[26%]"
+            className="absolute left-[3%] top-[34%] w-[26%]"
             style={{
               filter: 'saturate(0.7)',
               opacity: 0.85,
@@ -140,8 +137,8 @@ export function ParkingLot({
             <motion.div
               key="anim-car"
               className="absolute w-[30%]"
-              initial={{ left: '64%', top: '58%', opacity: 1, rotate: 0 }}
-              animate={{ left: '64%', top: '24%', opacity: 1, rotate: 0 }}
+              initial={{ left: '60%', top: '68%', opacity: 1, rotate: 0 }}
+              animate={{ left: '60%', top: '32%', opacity: 1, rotate: 0 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
               style={{ transformOrigin: 'center center' }}
@@ -157,7 +154,7 @@ export function ParkingLot({
         </AnimatePresence>
 
         {!animPhase && byId.C?.occupied && byId.C.vehicle && (
-          <div className="absolute left-[64%] top-[24%] w-[26%]">
+          <div className="absolute left-[60%] top-[32%] w-[26%]">
             <LowPolyCar
               type={byId.C.vehicle.type}
               color={byId.C.vehicle.color}
@@ -173,26 +170,26 @@ export function ParkingLot({
         type="button"
         aria-label="预约车位 C"
         onClick={onSelectC}
-        className="absolute right-[6%] top-[18%] h-[58%] w-[30%] rounded-lg border-0 bg-transparent"
+        className="absolute right-[10%] top-[28%] h-[55%] w-[28%] rounded-lg border-0 bg-transparent"
         style={{ cursor: byId.C?.bookable ? 'pointer' : 'not-allowed' }}
       />
 
       {/* maintenance badges */}
       <span
-        className="absolute left-[14%] top-[62%] rounded px-1.5 py-0.5 text-[10px] font-bold"
+        className="absolute left-[10%] top-[72%] rounded px-1.5 py-0.5 text-[10px] font-bold"
         style={{ background: 'var(--ui-maint-pill)', color: 'var(--ui-muted)' }}
       >
         维护中
       </span>
       <span
-        className="absolute left-[40%] top-[58%] rounded px-1.5 py-0.5 text-[10px] font-bold"
+        className="absolute left-[38%] top-[72%] rounded px-1.5 py-0.5 text-[10px] font-bold"
         style={{ background: 'var(--ui-maint-pill)', color: 'var(--ui-muted)' }}
       >
         维护中
       </span>
       {byId.C?.bookable && !byId.C.occupied && !animPhase && (
         <span
-          className="absolute right-[12%] top-[64%] rounded px-1.5 py-0.5 text-[10px] font-black shadow"
+          className="absolute right-[14%] top-[74%] rounded px-1.5 py-0.5 text-[10px] font-black shadow"
           style={{ background: 'var(--ui-accent)', color: '#ffffff' }}
         >
           可约 · 点我
@@ -210,6 +207,7 @@ function Bay({
   highlight,
   active,
   pulse,
+  plate,
 }: {
   points: string
   label: string
@@ -218,31 +216,40 @@ function Bay({
   highlight?: boolean
   active?: boolean
   pulse?: boolean
+  /** true when painted lot sprite is under us — keep fills light */
+  plate?: boolean
 }) {
+  const fill = plate
+    ? highlight
+      ? 'rgba(88, 112, 192, 0.18)'
+      : 'rgba(0, 0, 0, 0)'
+    : highlight
+      ? 'var(--lot-bay-fill-active)'
+      : 'var(--lot-bay-fill)'
   return (
-    <g opacity={dim ? 0.55 : 1}>
+    <g opacity={dim && !plate ? 0.55 : 1}>
       <polygon
         points={points}
-        fill={highlight ? 'var(--lot-bay-fill-active)' : 'var(--lot-bay-fill)'}
+        fill={fill}
         stroke={
           highlight
             ? 'var(--lot-bay-line-active)'
             : dim
-              ? 'var(--lot-bay-line-maint)'
+              ? 'var(--lot-bay-line-maint, #9ca3af)'
               : 'var(--lot-bay-line)'
         }
-        strokeWidth={highlight ? 2.5 : 1.8}
+        strokeWidth={highlight ? 2.5 : plate ? 0 : 1.8}
         className={pulse ? 'bay-pulse' : undefined}
       />
       <text
         x={labelAt[0]}
         y={labelAt[1]}
         textAnchor="middle"
-        fill={active ? '#f8f8f8' : 'var(--lot-curb-top)'}
+        fill={active ? (plate ? '#5870C0' : '#f8f8f8') : 'var(--lot-curb-top)'}
         fontSize="22"
         fontWeight="800"
         fontFamily="system-ui, sans-serif"
-        opacity="0.35"
+        opacity={plate ? 0.25 : 0.35}
       >
         {label}
       </text>
