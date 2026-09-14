@@ -143,19 +143,21 @@ Aaron signed off **2026-09-14**. Current WebPs in `public/art/vehicles/{type}-{c
 
 
 
-### Park pose sprites (reverse-in)
-Files: `public/art/vehicles/{type}-{color}-park.webp` (192×256).
+### Park pose sprites (reverse-in · match lot camera)
+Files: `public/art/vehicles/{type}-{color}-park.webp` (and main `{type}-{color}.webp` = same art).
 
 | Rule | Spec |
 |------|------|
-| Long axis | **Vertical** on sprite — parallel to upright bay sides |
-| Tail | Toward **top** of sprite (charger end) |
-| Nose | Toward **bottom** of sprite (aisle) — 倒车入库 |
-| Yaw | 0 relative to bay; do not diagonal-skew with CSS rotate |
-| Lot usage | `LowPolyCar pose="park"`; drawer preview keeps `pose="display"` three-quarter |
+| Camera | **Same oblique pitch/yaw as `parking-lot.webp`** — roof + side + front/rear faces visible like the charger/barricades. **Not** orthographic top-down “paper” stickers |
+| Long axis | Parallel to bay paint (plate bays slant ~bottom-left → top-right) |
+| Tail | Toward **bay head / charger** (upper end of bay) |
+| Nose | Toward **aisle** (lower end of bay) — 倒车入库 |
+| Light | Match lot: upper-left → lower-right contact shadow |
+| Engine | Place sprite with **no CSS rotate** — orientation is baked into the WebP |
+| Lot usage | `LowPolyCar pose="park"`; drawer may keep `pose="display"` if a separate display sheet exists |
 
 ### Drift-in motion (updated)
-Vehicle enters bay **aligned with the bay long axis** — nose toward bay orientation, path follows the stall centerline. **Not** a diagonal skew / crab into the bay. Timing still ~500–700ms ease-out, rigid body, no squash.
+Vehicle enters bay **aligned with the bay long axis** — path follows the stall centerline. Timing still ~500–700ms ease-out, rigid body, no squash. Do not compensate wrong camera with rotate.
 
 ---
 
@@ -191,4 +193,4 @@ Keep v2 light tokens. Absorb Starter geometry into chrome — do not go dark:
 - **Pills / badges:** flat color blocks; maintenance = `#E4E4E7`; bookable = accent
 - **Optional decor:** tiny hard-edged chevron / bolt as SVG icons matching charger bolt — never soft Material ripples
 
-**Update 2026-09-14 (urgent):** Main `{type}-{color}.webp` files are now the **same reverse-in vertical park art** as `-park` (long axis vertical, tail up / nose down). Do not rely on CSS rotate. A/B bay heads use **orange-white striped barricades + cones**, not stone bollards; C keeps the charger. Optional overlay: `public/art/props/barrier.webp`.
+**Update 2026-09-14 (urgent):** Main `{type}-{color}.webp` = `-park` = **oblique reverse-in** matching `parking-lot.webp` camera (3D low-poly on asphalt, not top-down paper). Tail toward charger, nose toward aisle; no CSS rotate. A/B = orange-white barricades + cones; C = charger. Optional: `public/art/props/barrier.webp`.
