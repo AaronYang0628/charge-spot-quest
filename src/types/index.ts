@@ -44,6 +44,18 @@ export interface Booking {
   cancelled: boolean
 }
 
+/** Public per-bay booking row (no session id). */
+export interface SpotBookingView {
+  id: string
+  spotId: SpotId
+  date: string
+  period: TimePeriod
+  status: 'booked'
+  plateMasked: string
+  vehicleType: VehicleType
+  vehicleColor: VehicleColor
+}
+
 export interface AppState {
   sessionId: string
   bookings: Booking[]
@@ -104,8 +116,11 @@ export const DEFAULT_VEHICLE: VehicleInfo = {
   type: 'convertible',
 }
 
+/** User-visible bay numbers (internal ids stay A/B/C). */
 export const SPOT_LABELS: Record<SpotId, string> = {
-  A: 'A',
-  B: 'B',
-  C: 'C',
+  A: '647',
+  B: '648',
+  C: '649',
 }
+
+export const SPOT_IDS: SpotId[] = ['A', 'B', 'C']

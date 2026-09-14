@@ -1,7 +1,17 @@
-import type { Booking, BookResult, SpotStatus, TimePeriod, VehicleInfo } from '../types'
+import type {
+  Booking,
+  BookResult,
+  SpotBookingView,
+  SpotId,
+  SpotStatus,
+  TimePeriod,
+  VehicleInfo,
+} from '../types'
 import {
   mockCreateBooking,
   mockGetBookings,
+  mockGetReservedPeriods,
+  mockGetSpotBookings,
   mockGetSpots,
   mockReset,
 } from './mock'
@@ -19,6 +29,16 @@ export const api = {
   async getMyBookings(sessionId: string): Promise<Booking[]> {
     await delay(60)
     return mockGetBookings(sessionId)
+  },
+
+  async getSpotBookings(spotId: SpotId): Promise<SpotBookingView[]> {
+    await delay(60)
+    return mockGetSpotBookings(spotId)
+  },
+
+  async getReservedPeriods(date: string, spotId?: SpotId): Promise<TimePeriod[]> {
+    await delay(40)
+    return mockGetReservedPeriods(date, spotId)
   },
 
   async createBooking(input: {

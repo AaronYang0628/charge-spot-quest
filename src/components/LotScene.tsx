@@ -5,18 +5,20 @@ import { Html, OrbitControls } from '@react-three/drei'
 import { Group, Mesh, MeshStandardMaterial, Object3D, OrthographicCamera, Vector3 } from 'three'
 import type { OrbitControls as Controls } from 'three-stdlib'
 import type { VehicleInfo } from '../types'
+import { SPOT_LABELS } from '../types'
 import type { AnimPhase } from '../hooks/useAppState'
 import { Vehicle } from './SceneModels'
 import TownBackdrop from './TownBackdrop'
 
 export interface LotSceneProps {
   vehicle: VehicleInfo | null; phase: AnimPhase; paused: boolean; reduced: boolean
-  adjust: boolean; reset: number; reserved: boolean
+  reset: number; reserved: boolean
   onSelect: () => void; onParked: () => void; onFinished: () => void
 }
 const TARGET = new Vector3(0, 0, -2.1)
 const CAMERA = new Vector3(9, 18, 14)
 const AZIMUTH = Math.atan2(9, 16.1)
+const BAY_LABELS = [SPOT_LABELS.A, SPOT_LABELS.B, SPOT_LABELS.C] as const
 
 function Box({ position, size, color, ...props }: {
   position: [number, number, number]; size: [number, number, number]; color: string
@@ -50,21 +52,20 @@ function Charger() {
     <mesh position={[.5,.95,0]} rotation={[0,0,0]} castShadow><torusGeometry args={[.38,.045,6,16,Math.PI*1.7]} /><meshStandardMaterial color="#273342" /></mesh>
   </group>
 }
-function CameraRig({ adjust, reset, paused }: Pick<LotSceneProps, 'adjust' | 'reset' | 'paused'>) {
+function CameraRig({ reset, paused }: Pick<LotSceneProps, 'reset' | 'paused'>) {
   const control = useRef<Controls>(null)
   const { camera, size, invalidate, scene, gl } = useThree()
   useEffect(() => {
     if (import.meta.env.DEV) Object.assign(window, { __lot: { camera, scene, gl } })
   }, [camera, scene, gl])
   const base = Math.min(size.width / 22, size.height / 19)
-  const touch = window.matchMedia('(pointer: coarse)').matches
   useEffect(() => {
     // oxlint-disable-next-line react/immutability -- Three cameras are intentionally imperative.
     const c = camera as OrthographicCamera
     c.position.copy(CAMERA); c.zoom = base; c.lookAt(TARGET); c.updateProjectionMatrix()
     control.current?.target.copy(TARGET); control.current?.update(); invalidate()
   }, [camera, base, reset, invalidate])
-  return <OrbitControls ref={control} target={TARGET} enabled={!paused && (!touch || adjust)}
+  return <OrbitControls ref={control} target={TARGET} enabled={!paused}
     enablePan={false} enableDamping={false} minAzimuthAngle={AZIMUTH - Math.PI*25/180}
     maxAzimuthAngle={AZIMUTH + Math.PI*25/180} minPolarAngle={Math.PI/6}
     maxPolarAngle={Math.PI*55/180} minZoom={base*.85} maxZoom={base*1.25} />
@@ -123,7 +124,7 @@ export default function LotScene(props: LotSceneProps) {
     <directionalLight position={[-8,14,8]} intensity={3.2} castShadow
       shadow-mapSize={[1024,1024]} shadow-camera-left={-13} shadow-camera-right={13}
       shadow-camera-top={13} shadow-camera-bottom={-13} shadow-normalBias={.03} shadow-bias={-.0001} />
-    <CameraRig {...props} />
+    <CameraRig reset={props.reset} paused={props.paused} />
     <TownBackdrop />
     <Box position={[0,-.045,1]} size={[10.5,.08,9.5]} color="#7f9592" />
     <Box position={[0,0,-3.9]} size={[11,.18,1.2]} color="#efe0be" />
@@ -131,7 +132,7 @@ export default function LotScene(props: LotSceneProps) {
     <Box position={[0,.013,-2.8]} size={[9.65,.025,.075]} color="#fff9e8" />
     {[-3.2,0,3.2].map((x,i) => <group key={x}>
       <Html position={[x,.1,2.7]} center style={{pointerEvents:'none'}}>
-        <span className="bay-letter">{'ABC'[i]}</span>
+        <span className="bay-letter">{BAY_LABELS[i]}</span>
       </Html>
       {i < 2 ? <><Barrier x={x} /><Html position={[x,1.8,-1.2]} center><span className="scene-tag muted">维护中</span></Html></> : null}
     </group>)}
@@ -145,7 +146,7 @@ export default function LotScene(props: LotSceneProps) {
     {props.phase === 'charging' && <ChargeEffect paused={props.paused} reduced={props.reduced} />}
     <Html position={[3.2,.3,3.1]} center>
       <button className="scene-tag action" disabled={props.paused || !!props.phase} onClick={props.onSelect}>
-        {props.phase ? '预约效果演示' : props.reserved ? '已预约 · 查看时段' : 'C 可约 · 点我'}
+        {props.phase ? '预约效果演示' : props.reserved ? `已预约 · 查看时段` : `${SPOT_LABELS.C} 可约 · 点我`}
       </button>
     </Html>
   </>

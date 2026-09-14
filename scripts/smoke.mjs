@@ -9,7 +9,7 @@ try {
   await new Promise(r => setTimeout(r, 3500))
   await mkdir('screenshots', { recursive: true })
   await page.screenshot({ path: 'screenshots/initial.png' })
-  await page.click('button[aria-label="预约车位 C"]')
+  await page.click('button[aria-label="预约车位 649"]')
   await new Promise(r => setTimeout(r, 1500))
   await page.screenshot({ path: 'screenshots/drawer.png' })
   console.log(await page.evaluate(() => document.body.innerText))

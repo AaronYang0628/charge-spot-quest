@@ -44,6 +44,8 @@ export function saveState(state: AppState): void {
 export function clearAllData(): void {
   localStorage.removeItem(STORAGE_KEY)
   localStorage.removeItem(VEHICLE_KEY)
+  localStorage.removeItem('charge-spot-quest-mock-v1')
+  localStorage.removeItem('charge-spot-quest-mock-v2')
 }
 
 export function loadVehicle(): VehicleInfo | null {

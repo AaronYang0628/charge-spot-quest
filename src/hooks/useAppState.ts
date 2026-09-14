@@ -1,22 +1,27 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { api } from '../api/client'
-import type { Booking, BookResult, SpotStatus, TimePeriod, VehicleInfo } from '../types'
+import type { Booking, BookResult, SpotId, SpotStatus, TimePeriod, VehicleInfo } from '../types'
+import { BOOKABLE_SPOT, SPOT_LABELS } from '../types'
 import { clearAllData, loadState, saveState, saveVehicle } from '../lib/storage'
 import { todayISO } from '../lib/time'
 
 export type AnimPhase = 'closing' | 'parking' | 'charging' | null
+
 export function useAppState() {
   const [state, setState] = useState(loadState)
   const [spots, setSpots] = useState<SpotStatus[]>([])
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const [bookingsSpot, setBookingsSpot] = useState<SpotId | null>(null)
   const [animPhase, setAnimPhase] = useState<AnimPhase>(null)
   const [pending, setPending] = useState<Booking | null>(null)
   const [confirming, setConfirming] = useState(false)
   const [result, setResult] = useState<BookResult | null>(null)
   const busy = useRef(false)
   const generation = useRef(0)
+
   useEffect(() => () => { generation.current++ }, [])
   useEffect(() => { try { saveState(state) } catch { /* Session remains usable in memory. */ } }, [state])
+
   const refresh = useCallback(async () => {
     const request = generation.current
     const [list, bookings] = await Promise.all([api.getSpots(), api.getMyBookings(state.sessionId)])
@@ -24,6 +29,7 @@ export function useAppState() {
     setSpots(list)
     setState(s => ({ ...s, bookings }))
   }, [state.sessionId])
+
   useEffect(() => {
     // oxlint-disable-next-line react/set-state-in-effect -- Synchronize asynchronous API state.
     void refresh().catch(() => setResult({ ok: false, reason: '车位信息加载失败，请刷新重试' }))
@@ -32,20 +38,29 @@ export function useAppState() {
     window.addEventListener('focus', sync)
     return () => { window.removeEventListener('storage', sync); window.removeEventListener('focus', sync) }
   }, [refresh])
+
   const openDrawer = () => {
     if (busy.current) return
-    const c = spots.find(s => s.id === 'C')
-    if (!c?.bookable || c.occupied) {
-      setResult({ ok: false, reason: c?.occupied ? '车位当前被占用' : '今天的时段已约满或暂不可约' })
-    } else setDrawerOpen(true)
+    const c = spots.find(s => s.id === BOOKABLE_SPOT)
+    if (!c || c.maintenance) {
+      setResult({ ok: false, reason: `${SPOT_LABELS.C} 号位暂不可约` })
+      return
+    }
+    setDrawerOpen(true)
   }
-  const confirm = async (period: TimePeriod, vehicle: VehicleInfo) => {
+
+  const openSpotBookings = (spotId: SpotId) => {
+    if (busy.current) return
+    setBookingsSpot(spotId)
+  }
+
+  const confirm = async (period: TimePeriod, vehicle: VehicleInfo, date: string) => {
     if (busy.current) return
     busy.current = true
     setConfirming(true)
     const request = generation.current
     try {
-      const res = await api.createBooking({ sessionId: state.sessionId, date: todayISO(), period, vehicle })
+      const res = await api.createBooking({ sessionId: state.sessionId, date, period, vehicle })
       if (request !== generation.current) return
       if (!res.ok || !res.booking) {
         setResult({ ok: false, reason: res.reason || '预约失败，请重试' })
@@ -67,6 +82,7 @@ export function useAppState() {
       }
     } finally { if (request === generation.current) setConfirming(false) }
   }
+
   const finish = useCallback(() => {
     if (!pending) return
     setResult({ ok: true, booking: pending, reason: '预约成功，请按预约时段到场' })
@@ -74,6 +90,7 @@ export function useAppState() {
     setPending(null)
     busy.current = false
   }, [pending])
+
   const resetAll = async () => {
     if (busy.current) return
     generation.current++
@@ -82,14 +99,19 @@ export function useAppState() {
       clearAllData()
       setState(loadState())
       setSpots(await api.getSpots())
-      setAnimPhase(null); setPending(null); setResult(null); setDrawerOpen(false)
+      setAnimPhase(null); setPending(null); setResult(null); setDrawerOpen(false); setBookingsSpot(null)
     } catch { setResult({ ok: false, reason: '无法清除浏览器存储' }) }
   }
+
   const parked = [...state.bookings].reverse().find(b => !b.cancelled && b.date === todayISO())
-  return { state, spots, drawerOpen, confirming, result, animPhase,
+  return {
+    state, spots, drawerOpen, bookingsSpot, confirming, result, animPhase,
     animVehicle: pending?.vehicle ?? parked?.vehicle ?? null,
-    openDrawer, closeDrawer: () => { if (!busy.current) setDrawerOpen(false) }, confirm,
+    openDrawer, closeDrawer: () => { if (!busy.current) setDrawerOpen(false) },
+    openSpotBookings, closeSpotBookings: () => setBookingsSpot(null),
+    confirm,
     onDrawerExited: () => { if (animPhase === 'closing') setAnimPhase('parking') },
     onParked: () => setAnimPhase(p => p === 'parking' ? 'charging' : p),
-    onFinished: finish, dismissResult: () => setResult(null), resetAll }
+    onFinished: finish, dismissResult: () => setResult(null), resetAll,
+  }
 }

@@ -2,7 +2,9 @@ import { useAppState } from './hooks/useAppState'
 import { ParkingLot } from './components/ParkingLot'
 import { SpotBars } from './components/SpotBars'
 import { BookingDrawer } from './components/BookingDrawer'
+import { BookingsSheet } from './components/BookingsSheet'
 import { ResultToast } from './components/ResultToast'
+import { SPOT_LABELS } from './types'
 import { formatHugeDate } from './lib/time'
 
 export default function App() {
@@ -10,12 +12,15 @@ export default function App() {
     state,
     spots,
     drawerOpen,
+    bookingsSpot,
     animVehicle,
     animPhase,
     confirming,
     result,
     openDrawer,
     closeDrawer,
+    openSpotBookings,
+    closeSpotBookings,
     confirm,
     dismissResult,
     resetAll, onDrawerExited, onParked, onFinished,
@@ -53,7 +58,7 @@ export default function App() {
             spots={spots}
             animVehicle={animVehicle}
             animPhase={animPhase}
-            paused={drawerOpen}
+            paused={drawerOpen || bookingsSpot !== null}
             onParked={onParked} onFinished={onFinished}
             onSelectC={openDrawer}
           />
@@ -62,7 +67,11 @@ export default function App() {
         {/* progress bars under each spot */}
         <div className="grid grid-cols-3 gap-2">
           {spots.map((s) => (
-            <SpotBars key={s.id} spot={s} />
+            <SpotBars
+              key={s.id}
+              spot={s}
+              onOpenBookings={() => openSpotBookings(s.id)}
+            />
           ))}
         </div>
 
@@ -70,7 +79,7 @@ export default function App() {
           className="px-1 text-center text-[10px] leading-relaxed"
           style={{ color: 'var(--ui-muted)' }}
         >
-          仅 C 可约 · A/B 维护中 · 无需登录与支付
+          仅 {SPOT_LABELS.C} 可约 · {SPOT_LABELS.A}/{SPOT_LABELS.B} 维护中 · 无需登录与支付
           <span className="mt-1 block opacity-70">早 · 中 · 晚，把合适的时间留给你。</span>
         </p>
 
@@ -88,11 +97,12 @@ export default function App() {
         open={drawerOpen}
         initialVehicle={state.vehicle}
         onClose={closeDrawer}
-        onConfirm={(period, vehicle) => void confirm(period, vehicle)}
+        onConfirm={(period, vehicle, date) => void confirm(period, vehicle, date)}
         confirming={confirming}
-        reservedPeriods={spots.find(s => s.id === 'C')?.reservedPeriods ?? []}
         onExited={onDrawerExited}
       />
+
+      <BookingsSheet spotId={bookingsSpot} onClose={closeSpotBookings} />
 
       <ResultToast
         open={!!result}

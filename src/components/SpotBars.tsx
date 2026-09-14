@@ -1,13 +1,16 @@
 import { useEffect, useState } from 'react'
 import type { SpotStatus } from '../types'
+import { SPOT_LABELS } from '../types'
 import { formatElapsed } from '../lib/time'
 
 interface Props {
   spot: SpotStatus
+  onOpenBookings?: () => void
 }
 
-export function SpotBars({ spot }: Props) {
+export function SpotBars({ spot, onOpenBookings }: Props) {
   const [now, setNow] = useState(() => Date.now())
+  const label = SPOT_LABELS[spot.id]
 
   useEffect(() => {
     if (!spot.occupied || !spot.occupiedSince) return
@@ -29,12 +32,12 @@ export function SpotBars({ spot }: Props) {
         opacity: spot.maintenance ? 0.72 : 1,
       }}
     >
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-1">
         <span
           className="text-[12px] font-black tracking-wide"
           style={{ color: 'var(--ui-text)' }}
         >
-          {spot.id} 号位
+          {label}
         </span>
         {spot.maintenance ? (
           <span
@@ -89,6 +92,22 @@ export function SpotBars({ spot }: Props) {
             </div>
           </div>
         </div>
+      )}
+
+      {onOpenBookings && (
+        <button
+          type="button"
+          onClick={onOpenBookings}
+          className="mt-0.5 w-full rounded-lg py-1.5 text-[10px] font-bold"
+          style={{
+            background: 'var(--ui-tile, #f4f4f5)',
+            color: 'var(--ui-text)',
+            border: '1px solid var(--ui-border)',
+          }}
+          aria-label={`查看 ${label} 预约列表`}
+        >
+          预约列表
+        </button>
       )}
     </div>
   )

@@ -33,7 +33,7 @@ try {
   const cameraAfter = await page.evaluate(()=>window.__lot.camera.position.toArray())
   check('camera changed', JSON.stringify(cameraBefore)!==JSON.stringify(cameraAfter))
   await click(page,'复位'); await wait(300)
-  await page.click('button[aria-label="预约车位 C"]')
+  await page.click('button[aria-label="预约车位 649"]')
   await page.waitForSelector('[role="dialog"]'); await wait(600)
   const swatches = ['蓝色','黄色','橙色','白色','红色','绿色']
   for (const type of ['敞篷车','皮卡']) {
@@ -67,7 +67,7 @@ try {
   await page.reload(); await ready(page)
   check('reload restores car without replay',await page.evaluate(()=>!!window.__lot.scene.getObjectByName('pickup') && !document.body.innerText.includes('预约效果演示')))
   check('session retained',session===await page.evaluate(()=>JSON.parse(localStorage.getItem('charge-spot-quest-v3')).sessionId))
-  await page.click('button[aria-label="预约车位 C"]'); await wait(400)
+  await page.click('button[aria-label="预约车位 649"]'); await wait(400)
   check('reserved period disabled',await page.evaluate(()=>[...document.querySelectorAll('[role="dialog"] button')].some(b=>b.disabled&&b.textContent.includes('已预约'))))
   // Inject a rejected async request and verify the form recovers.
   await page.evaluate(async()=>{const {api}=await import('/src/api/client.ts');window.__originalBooking=api.createBooking;api.createBooking=async()=>{throw Error('test network failure')}})
@@ -82,7 +82,7 @@ try {
   // Context loss falls back without removing the successful reservation.
   await page.evaluate(()=>window.__lot.gl.getContext().getExtension('WEBGL_lose_context').loseContext())
   await page.waitForFunction(()=>document.body.innerText.includes('场景暂不可用'))
-  await page.click('button[aria-label="预约车位 C"]'); await wait(600); await click(page,'确认预约')
+  await page.click('button[aria-label="预约车位 649"]'); await wait(600); await click(page,'确认预约')
   await page.waitForFunction(()=>document.body.innerText.includes('预约成功，请按预约时段到场'))
   check('fallback can book third period',await page.evaluate(()=>JSON.parse(localStorage.getItem('charge-spot-quest-mock-v1')).length===3))
   await click(page,'知道了')
@@ -101,7 +101,7 @@ try {
   failure.on('request',r=>r.url().endsWith('tree.glb')?r.abort():r.continue())
   await failure.goto('http://127.0.0.1:5173')
   await failure.waitForFunction(()=>document.body.innerText.includes('场景暂不可用'))
-  await failure.click('button[aria-label="预约车位 C"]')
+  await failure.click('button[aria-label="预约车位 649"]')
   await failure.waitForSelector('[role="dialog"]')
   checks.push('missing asset preserves booking UI')
   check('no unexpected page errors',errors.length===0)

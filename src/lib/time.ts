@@ -6,12 +6,39 @@ export function todayISO(d = new Date()): string {
   return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`
 }
 
-export function formatHugeDate(d = new Date()): { weekday: string; dateLine: string; year: string } {
-  const week = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'][d.getDay()]!
+/** Inclusive booking window: today + next 6 days = 7 days. */
+export const BOOKING_WINDOW_DAYS = 7
+
+export function parseISODate(iso: string): Date {
+  const [y, m, d] = iso.split('-').map(Number)
+  return new Date(y!, m! - 1, d!)
+}
+
+export function addDaysISO(iso: string, days: number): string {
+  const d = parseISODate(iso)
+  d.setDate(d.getDate() + days)
+  return todayISO(d)
+}
+
+export function maxBookingISO(today = todayISO()): string {
+  return addDaysISO(today, BOOKING_WINDOW_DAYS - 1)
+}
+
+export function isBookableDate(iso: string, today = todayISO()): boolean {
+  return iso >= today && iso <= maxBookingISO(today)
+}
+
+export function formatHugeDate(d: Date | string = new Date()): {
+  weekday: string
+  dateLine: string
+  year: string
+} {
+  const date = typeof d === 'string' ? parseISODate(d) : d
+  const week = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'][date.getDay()]!
   return {
     weekday: week,
-    dateLine: `${d.getMonth() + 1}月${d.getDate()}日`,
-    year: `${d.getFullYear()}`,
+    dateLine: `${date.getMonth() + 1}月${date.getDate()}日`,
+    year: `${date.getFullYear()}`,
   }
 }
 
