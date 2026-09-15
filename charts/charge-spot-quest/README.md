@@ -4,6 +4,8 @@ Kubernetes / k3s scaffold for **邻里互助 · 共享充电** (Charge Spot Ques
 
 Chart version **0.1.0**, appVersion **0.1.0**.
 
+> **Agent handoff:** 根目录 [README.md](../../README.md) 的「Deploy — Helm / k3s」是给其他 ops agent 的总述；本文件是命令细则。
+
 > **Honest status:** the product is still mostly a Vite frontend + mock API on GitHub Pages. This chart is ready for a **thin API + Postgres** once an image exists. The default `image.repository` / `tag` are **placeholders** — override them at install time.
 
 Requires Kubernetes `>= 1.25`. No Bitnami subchart dependency (simpler for offline China mirrors); bundled Postgres is a small in-chart Deployment+PVC.
