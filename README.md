@@ -29,10 +29,62 @@ npm run build
 
 手机竖屏优先（~390px）。
 
+
+## Local backend（薄 API，先本地验证）
+
+> **尚未 push 镜像 / 尚未加 GHCR workflow。** 先在本机跑通，再考虑部署。
+
+Python FastAPI + SQLAlchemy。未设置 `DATABASE_URL` 时使用 SQLite 文件 `server/data/chargespot.sqlite`。
+
+```bash
+cd server
+python3 -m venv .venv
+source .venv/bin/activate   # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+
+# 可选：允许演示重置
+export ALLOW_DEMO_RESET=true
+
+# 默认 SQLite；若有 Postgres：
+# export DATABASE_URL='postgresql://USER:PASS@127.0.0.1:5432/chargespot'
+
+uvicorn app.main:app --host 0.0.0.0 --port 8080 --reload
+```
+
+健康检查：`http://127.0.0.1:8080/health`、`/readyz`  
+OpenAPI：`http://127.0.0.1:8080/docs`
+
+### 前端接真实 API
+
+```bash
+# 终端 1：后端如上
+# 终端 2：前端
+VITE_API_BASE=http://127.0.0.1:8080 npm run dev
+```
+
+不设 `VITE_API_BASE` 时仍走 `src/api/mock.ts`。`vite.config.ts` 也代理了 `/api` → `:8080`（可把 `VITE_API_BASE` 留空并改 client 走相对路径；当前推荐显式 base）。
+
+### 测试 / Smoke
+
+```bash
+cd server && source .venv/bin/activate
+pytest -q
+# 对已启动的服务：
+./scripts/smoke.sh http://127.0.0.1:8080
+```
+
+### Dockerfile（仅本地，勿 push）
+
+```bash
+cd server
+docker build -t charge-spot-quest-api:local .
+# 不要 docker push / 不要建 GHCR workflow，等本地验证后再说
+```
+
 ## Deploy — Helm / k3s（给其他 agent 的部署说明）
 
 仓库内已有脚手架 chart：[`charts/charge-spot-quest`](charts/charge-spot-quest)（**v0.1.0**）。  
-**现状：** 前端仍在 GitHub Pages + mock；chart 面向未来的 **薄 API + Postgres**。默认 `image.repository` / `tag` 是**占位镜像**，部署前必须改成真实 API 镜像。健康检查默认关闭，等 API 提供 `/health`、`/readyz` 后再打开。
+**现状：** 前端仍可走 GitHub Pages + mock；集群用 chart 部署 **薄 API**（`ghcr.io/aaronyang0628/charge-spot-quest:0.1.0`）。未设 `DATABASE_URL` 时用容器内 SQLite；生产请外置 Postgres。`/health`、`/readyz` 已可用。
 
 **不要**把真实域名、集群内网 IP、密码写进公开 values / README；用 `charge-spot.example.com`、`pg.example.com` 这类占位符，密钥用集群外 Secret。
 
@@ -50,8 +102,8 @@ npm run build
 ```bash
 helm upgrade --install charge-spot-quest ./charts/charge-spot-quest \
   -n charge-spot --create-namespace \
-  --set image.repository=<YOUR_API_IMAGE> \
-  --set image.tag=<TAG> \
+  --set image.repository=ghcr.io/aaronyang0628/charge-spot-quest \
+  --set image.tag=0.1.0 \
   --set postgresql.enabled=true \
   --set postgresql.auth.password='<CHANGE_ME>'
 ```
@@ -66,8 +118,8 @@ kubectl -n charge-spot create secret generic charge-spot-db \
 
 helm upgrade --install charge-spot-quest ./charts/charge-spot-quest \
   -n charge-spot --create-namespace \
-  --set image.repository=<YOUR_API_IMAGE> \
-  --set image.tag=<TAG> \
+  --set image.repository=ghcr.io/aaronyang0628/charge-spot-quest \
+  --set image.tag=0.1.0 \
   --set postgresql.enabled=false \
   --set externalDatabase.host=pg.example.com \
   --set secrets.create=false \

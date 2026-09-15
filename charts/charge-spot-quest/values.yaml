@@ -14,7 +14,7 @@ replicaCount: 1
 image:
   # Placeholder until a real API image exists. Override at install time.
   # 占位镜像；发布真实 API 后用 --set image.repository/tag 覆盖。
-  repository: ghcr.io/example/charge-spot-quest-api
+  repository: ghcr.io/aaronyang0628/charge-spot-quest
   tag: "0.1.0"
   digest: ""
   pullPolicy: IfNotPresent
@@ -149,10 +149,9 @@ resources:
     cpu: 500m
     memory: 512Mi
 
-# Probes are optional — placeholder API may not expose /health yet.
-# Set enabled: true when the image serves these paths.
+# API exposes /health and /readyz — probes on by default.
 livenessProbe:
-  enabled: false
+  enabled: true
   httpGet:
     path: /health
     port: http
@@ -162,7 +161,7 @@ livenessProbe:
   failureThreshold: 3
 
 readinessProbe:
-  enabled: false
+  enabled: true
   httpGet:
     path: /readyz
     port: http

@@ -22,7 +22,7 @@ Requires Kubernetes `>= 1.25`. No Bitnami subchart dependency (simpler for offli
 ```bash
 helm upgrade --install charge-spot-quest ./charts/charge-spot-quest \
   -n charge-spot --create-namespace \
-  --set image.repository=ghcr.io/example/charge-spot-quest-api \
+  --set image.repository=ghcr.io/aaronyang0628/charge-spot-quest \
   --set image.tag=0.1.0 \
   --set postgresql.enabled=true \
   --set postgresql.auth.password='change-me'
@@ -36,7 +36,7 @@ If `postgresql.auth.password` is empty, the chart generates a random password in
 # Option 1: password in values (local/non-prod only — prefer a Secret)
 helm upgrade --install charge-spot-quest ./charts/charge-spot-quest \
   -n charge-spot --create-namespace \
-  --set image.repository=ghcr.io/example/charge-spot-quest-api \
+  --set image.repository=ghcr.io/aaronyang0628/charge-spot-quest \
   --set image.tag=0.1.0 \
   --set postgresql.enabled=false \
   --set externalDatabase.host=pg.example.com \
@@ -54,7 +54,7 @@ kubectl -n charge-spot create secret generic charge-spot-db \
 
 helm upgrade --install charge-spot-quest ./charts/charge-spot-quest \
   -n charge-spot --create-namespace \
-  --set image.repository=ghcr.io/example/charge-spot-quest-api \
+  --set image.repository=ghcr.io/aaronyang0628/charge-spot-quest \
   --set image.tag=0.1.0 \
   --set postgresql.enabled=false \
   --set externalDatabase.host=pg.example.com \
@@ -87,7 +87,7 @@ Liveness / readiness probes default to **off** until the real API exposes `/heal
 
 | Key | Default | Notes |
 |-----|---------|-------|
-| `image.repository` | `ghcr.io/example/charge-spot-quest-api` | Placeholder |
+| `image.repository` | `ghcr.io/aaronyang0628/charge-spot-quest` | Placeholder |
 | `image.tag` | `0.1.0` | Override when you publish |
 | `service.port` | `8080` | Container + Service port |
 | `postgresql.enabled` | `true` | 内置 PG |

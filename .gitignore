@@ -23,3 +23,12 @@ dist-ssr
 *.sln
 *.sw?
 screenshots
+
+# Backend
+server/.venv/
+server/data/*.sqlite
+server/data/*.sqlite-*
+**/__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
