@@ -1,0 +1,8 @@
+# GitGuardian — charge-spot-quest
+# Docs use placeholder DB URLs without embedded passwords. Ignore common false positives in markdown.
+version: 2
+paths-ignore:
+  - "package-lock.json"
+  - "**/node_modules/**"
+  - "public/models/**"
+  - "public/art/**"

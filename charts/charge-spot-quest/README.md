@@ -45,7 +45,7 @@ helm upgrade --install charge-spot-quest ./charts/charge-spot-quest \
   --set image.tag=0.1.1 \
   --set postgresql.enabled=true \
   --set sqlite.enabled=false \
-  --set postgresql.auth.password='change-me'
+  --set postgresql.auth.password="$(openssl rand -hex 16)"
 ```
 
 密码为空时 chart 会生成随机密码并写入 Secret（升级时尽量用 `lookup` 保持稳定）。
@@ -55,7 +55,8 @@ helm upgrade --install charge-spot-quest ./charts/charge-spot-quest \
 ```bash
 # 推荐：现成 Secret
 kubectl -n charge-spot create secret generic charge-spot-db \
-  --from-literal=DATABASE_URL='postgresql://chargespot:SECRET@pg.example.com:5432/chargespot?sslmode=require'
+  --from-literal=DATABASE_URL='postgresql://chargespot@pg.example.com:5432/chargespot?sslmode=require'
+  # real password only inside the Secret object, never in git
 
 helm upgrade --install charge-spot-quest ./charts/charge-spot-quest \
   -n charge-spot --create-namespace \

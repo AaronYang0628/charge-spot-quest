@@ -39,7 +39,7 @@ cd server
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 export ALLOW_DEMO_RESET=true   # 可选
-# 可选 Postgres: export DATABASE_URL='postgresql://USER:PASS@127.0.0.1:5432/chargespot'
+# 可选 Postgres: export DATABASE_URL='postgresql://USER@127.0.0.1:5432/chargespot'  # password via PG* env / Secret, not in git
 uvicorn app.main:app --host 0.0.0.0 --port 8080 --reload
 
 # 另一终端接 API（绝对 URL）
@@ -91,7 +91,7 @@ helm upgrade --install charge-spot-quest ./charts/charge-spot-quest \
   --set image.repository=ghcr.io/aaronyang0628/charge-spot-quest \
   --set image.tag=0.1.1 \
   --set postgresql.enabled=true \
-  --set postgresql.auth.password='CHANGE_ME'
+  --set postgresql.auth.password="$(openssl rand -hex 16)"
 ```
 
 ### 外置 Postgres（生产）
@@ -99,7 +99,8 @@ helm upgrade --install charge-spot-quest ./charts/charge-spot-quest \
 ```bash
 kubectl -n charge-spot create namespace charge-spot --dry-run=client -o yaml | kubectl apply -f -
 kubectl -n charge-spot create secret generic charge-spot-db \
-  --from-literal=DATABASE_URL='postgresql://USER:PASS@pg.example.com:5432/chargespot?sslmode=require'
+  --from-literal=DATABASE_URL='postgresql://USER@pg.example.com:5432/chargespot?sslmode=require'
+  # put the real password only in the cluster Secret — never commit it
 
 helm upgrade --install charge-spot-quest ./charts/charge-spot-quest \
   -n charge-spot --create-namespace \
