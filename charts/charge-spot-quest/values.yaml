@@ -1,0 +1,176 @@
+# =============================================================================
+# charge-spot-quest Helm values
+# 邻里互助 · 共享充电 — k3s / Kubernetes scaffold for a future thin API + Postgres
+# =============================================================================
+# Frontend today ships on GitHub Pages. This chart deploys a configurable API
+# (or static+API placeholder) image and wires DATABASE_URL from either:
+#   A) Bundled Postgres  内置 PG — postgresql.enabled: true  (MVP / local / demo)
+#   B) External Postgres 外置 PG — postgresql.enabled: false + externalDatabase.*
+# Production should prefer external managed Postgres. 生产请用外置 PG。
+# =============================================================================
+
+replicaCount: 1
+
+image:
+  # Placeholder until a real API image exists. Override at install time.
+  # 占位镜像；发布真实 API 后用 --set image.repository/tag 覆盖。
+  repository: ghcr.io/example/charge-spot-quest-api
+  tag: "0.1.0"
+  digest: ""
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 10001
+  runAsGroup: 10001
+  fsGroup: 10001
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
+
+automountServiceAccountToken: false
+terminationGracePeriodSeconds: 30
+
+service:
+  type: ClusterIP
+  port: 8080
+
+# Non-sensitive app config → ConfigMap. Keep passwords in Secret.
+# 非敏感配置进 ConfigMap；密码走 Secret。
+env:
+  APP_ENV: production
+  APP_HOST: 0.0.0.0
+  APP_PORT: "8080"
+  LOG_LEVEL: INFO
+
+extraEnv: []
+extraEnvFrom: []
+
+# -----------------------------------------------------------------------------
+# Postgres mode / 数据库模式
+# -----------------------------------------------------------------------------
+# 内置 PG (bundled): set postgresql.enabled: true
+#   → chart creates Deployment + Service + PVC + Secret (simple MVP postgres)
+#   → API gets DATABASE_URL pointing at in-cluster service
+#
+# 外置 PG (external): set postgresql.enabled: false
+#   → supply externalDatabase.host / port / user / database / password
+#     or externalDatabase.existingSecret (keys: username, password, database, host, port)
+#   → API gets DATABASE_URL from those values
+#
+# Production: use external PG. 生产环境请关闭内置、使用外置数据库。
+# -----------------------------------------------------------------------------
+
+postgresql:
+  # true = deploy simple in-cluster Postgres (MVP / demo only)
+  # false = use externalDatabase below
+  enabled: true
+  image:
+    repository: postgres
+    tag: "16-alpine"
+    pullPolicy: IfNotPresent
+  auth:
+    # Used only when bundled and no existingSecret
+    username: chargespot
+    password: ""           # empty → chart generates a random password into Secret
+    database: chargespot
+    existingSecret: ""     # optional: Secret with keys username, password, database
+  persistence:
+    enabled: true
+    size: 5Gi
+    storageClass: ""       # empty = cluster default
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  service:
+    port: 5432
+
+# Used when postgresql.enabled: false
+# 外置 Postgres：postgresql.enabled 为 false 时生效
+externalDatabase:
+  host: pg.example.com
+  port: 5432
+  user: chargespot
+  password: ""             # prefer existingSecret in production
+  database: chargespot
+  # Optional: Secret with keys host, port, username, password, database
+  # 若设置，优先从此 Secret 读取连接信息（含 password）
+  existingSecret: ""
+  # Optional SSL mode appended to DATABASE_URL (e.g. require)
+  sslMode: ""
+
+# Chart-managed app Secret (DATABASE_URL). Usually leave create=true so the
+# chart builds DATABASE_URL from postgresql / externalDatabase.
+# 一般保持 create=true，由 chart 根据内置/外置 PG 组装 DATABASE_URL。
+secrets:
+  create: true
+  existingSecret: ""       # if set and create=false, Deployment mounts this Secret
+  # Extra stringData merged into chart-managed Secret (local/non-prod only)
+  stringData: {}
+
+ingress:
+  enabled: false
+  className: nginx
+  annotations: {}
+  hosts:
+    - host: charge-spot.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+  # Example TLS:
+  # tls:
+  #   - secretName: charge-spot.example.com-tls
+  #     hosts:
+  #       - charge-spot.example.com
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+# Probes are optional — placeholder API may not expose /health yet.
+# Set enabled: true when the image serves these paths.
+livenessProbe:
+  enabled: false
+  httpGet:
+    path: /health
+    port: http
+  initialDelaySeconds: 10
+  periodSeconds: 30
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+readinessProbe:
+  enabled: false
+  httpGet:
+    path: /readyz
+    port: http
+  initialDelaySeconds: 5
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+nodeSelector: {}
+tolerations: []
+affinity: {}

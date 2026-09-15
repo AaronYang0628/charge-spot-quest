@@ -31,3 +31,13 @@ npm run build
 ```
 
 Phone portrait (~390px) primary; desktop centers a ~420px column.
+
+
+## Deploy (Helm / k3s)
+
+Scaffold chart: [`charts/charge-spot-quest`](charts/charge-spot-quest) — thin API + Postgres for future cluster deploy (frontend today stays on GitHub Pages).
+
+- **内置 PG** / bundled: `postgresql.enabled: true` (MVP / demo)
+- **外置 PG** / external: `postgresql.enabled: false` + `externalDatabase.*` (prefer in production)
+
+See [charts/charge-spot-quest/README.md](charts/charge-spot-quest/README.md) for `helm install` examples (placeholders only — no real hostnames).

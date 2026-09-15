@@ -1,0 +1,118 @@
+{{- if .Values.postgresql.enabled }}
+{{- $pgName := include "charge-spot-quest.postgres.fullname" . -}}
+{{- $labels := include "charge-spot-quest.labels" . -}}
+{{- $authSecret := include "charge-spot-quest.postgres.secretName" . -}}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $pgName }}
+  labels:
+    {{- $labels | nindent 4 }}
+    app.kubernetes.io/component: postgresql
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: {{ include "charge-spot-quest.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: postgresql
+  ports:
+    - name: postgresql
+      port: {{ .Values.postgresql.service.port }}
+      targetPort: postgresql
+      protocol: TCP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $pgName }}
+  labels:
+    {{- $labels | nindent 4 }}
+    app.kubernetes.io/component: postgresql
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "charge-spot-quest.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: postgresql
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "charge-spot-quest.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/component: postgresql
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - name: postgresql
+          image: "{{ .Values.postgresql.image.repository }}:{{ .Values.postgresql.image.tag }}"
+          imagePullPolicy: {{ .Values.postgresql.image.pullPolicy }}
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $authSecret }}
+                  key: {{ if .Values.postgresql.auth.existingSecret }}username{{ else }}POSTGRES_USER{{ end }}
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $authSecret }}
+                  key: {{ if .Values.postgresql.auth.existingSecret }}password{{ else }}POSTGRES_PASSWORD{{ end }}
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $authSecret }}
+                  key: {{ if .Values.postgresql.auth.existingSecret }}database{{ else }}POSTGRES_DB{{ end }}
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          ports:
+            - name: postgresql
+              containerPort: 5432
+              protocol: TCP
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+          resources:
+            {{- toYaml .Values.postgresql.resources | nindent 12 }}
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "{{ .Values.postgresql.auth.username }}"]
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            exec:
+              command: ["pg_isready", "-U", "{{ .Values.postgresql.auth.username }}"]
+            initialDelaySeconds: 15
+            periodSeconds: 20
+      volumes:
+        {{- if .Values.postgresql.persistence.enabled }}
+        - name: data
+          persistentVolumeClaim:
+            claimName: {{ $pgName }}
+        {{- else }}
+        - name: data
+          emptyDir: {}
+        {{- end }}
+{{- if .Values.postgresql.persistence.enabled }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ $pgName }}
+  labels:
+    {{- $labels | nindent 4 }}
+    app.kubernetes.io/component: postgresql
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.postgresql.persistence.size }}
+  {{- with .Values.postgresql.persistence.storageClass }}
+  storageClassName: {{ . | quote }}
+  {{- end }}
+{{- end }}
+{{- end }}

@@ -204,14 +204,22 @@ export function BookingDrawer({
                   aria-label="前一天"
                   disabled={!canPrev || confirming}
                   onClick={() => setDate((d) => addDaysISO(d, -1))}
-                  className="flex h-10 w-10 items-center justify-center rounded-full text-xl font-black disabled:opacity-35"
-                  style={{
-                    background: 'var(--ui-tile, #f4f4f5)',
-                    color: 'var(--ui-text)',
-                    border: '1px solid var(--ui-border)',
-                  }}
+                  className="flex h-11 w-11 items-center justify-center p-2 disabled:opacity-35"
+                  style={{ color: 'var(--ui-text)', background: 'transparent' }}
                 >
-                  ‹
+                  <svg
+                    width="30"
+                    height="30"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    aria-hidden
+                    stroke="currentColor"
+                    strokeWidth="2.25"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <polyline points="15 6 9 12 15 18" />
+                  </svg>
                 </button>
                 <div className="min-w-[9.5rem] text-center">
                   <p
@@ -235,14 +243,22 @@ export function BookingDrawer({
                   aria-label="后一天"
                   disabled={!canNext || confirming}
                   onClick={() => setDate((d) => addDaysISO(d, 1))}
-                  className="flex h-10 w-10 items-center justify-center rounded-full text-xl font-black disabled:opacity-35"
-                  style={{
-                    background: 'var(--ui-tile, #f4f4f5)',
-                    color: 'var(--ui-text)',
-                    border: '1px solid var(--ui-border)',
-                  }}
+                  className="flex h-11 w-11 items-center justify-center p-2 disabled:opacity-35"
+                  style={{ color: 'var(--ui-text)', background: 'transparent' }}
                 >
-                  ›
+                  <svg
+                    width="30"
+                    height="30"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    aria-hidden
+                    stroke="currentColor"
+                    strokeWidth="2.25"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <polyline points="9 6 15 12 9 18" />
+                  </svg>
                 </button>
               </div>
 

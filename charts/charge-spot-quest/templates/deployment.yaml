@@ -1,0 +1,95 @@
+{{- if and (not .Values.secrets.create) (empty .Values.secrets.existingSecret) }}
+{{- fail "secrets.existingSecret is required when secrets.create is false" }}
+{{- end }}
+{{- if and .Values.postgresql.enabled (not .Values.secrets.create) (empty .Values.postgresql.auth.existingSecret) }}
+{{- fail "Bundled Postgres needs secrets.create=true (chart Secret with POSTGRES_*) or postgresql.auth.existingSecret" }}
+{{- end }}
+{{- if and (not .Values.postgresql.enabled) (empty .Values.externalDatabase.host) (empty .Values.externalDatabase.existingSecret) }}
+{{- fail "externalDatabase.host or externalDatabase.existingSecret is required when postgresql.enabled is false" }}
+{{- end }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "charge-spot-quest.fullname" . }}
+  labels:
+    {{- include "charge-spot-quest.labels" . | nindent 4 }}
+  {{- with .Values.podAnnotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "charge-spot-quest.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "charge-spot-quest.selectorLabels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        {{- if .Values.secrets.create }}
+        checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+        {{- end }}
+    spec:
+      automountServiceAccountToken: {{ if .Values.automountServiceAccountToken }}true{{ else }}false{{ end }}
+      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ include "charge-spot-quest.name" . }}
+          image: {{ include "charge-spot-quest.image" . | quote }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.port }}
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: {{ include "charge-spot-quest.fullname" . }}
+            {{- if or .Values.secrets.create .Values.secrets.existingSecret }}
+            - secretRef:
+                name: {{ include "charge-spot-quest.secretName" . }}
+            {{- end }}
+            {{- if and (not .Values.postgresql.enabled) .Values.externalDatabase.existingSecret }}
+            - secretRef:
+                name: {{ .Values.externalDatabase.existingSecret | quote }}
+            {{- end }}
+          {{- with .Values.extraEnvFrom }}
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.extraEnv }}
+          env:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- if .Values.livenessProbe.enabled }}
+          livenessProbe:
+            {{- omit .Values.livenessProbe "enabled" | toYaml | nindent 12 }}
+          {{- end }}
+          {{- if .Values.readinessProbe.enabled }}
+          readinessProbe:
+            {{- omit .Values.readinessProbe "enabled" | toYaml | nindent 12 }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

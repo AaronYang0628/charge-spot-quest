@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "charge-spot-quest.fullname" . }}
+  labels:
+    {{- include "charge-spot-quest.labels" . | nindent 4 }}
+data:
+  {{- range $key, $value := .Values.env }}
+  {{ $key }}: {{ printf "%v" $value | quote }}
+  {{- end }}
