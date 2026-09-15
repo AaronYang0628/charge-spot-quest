@@ -4,8 +4,11 @@
 {{- if and .Values.postgresql.enabled (not .Values.secrets.create) (empty .Values.postgresql.auth.existingSecret) }}
 {{- fail "Bundled Postgres needs secrets.create=true (chart Secret with POSTGRES_*) or postgresql.auth.existingSecret" }}
 {{- end }}
-{{- if and (not .Values.postgresql.enabled) (empty .Values.externalDatabase.host) (empty .Values.externalDatabase.existingSecret) }}
-{{- fail "externalDatabase.host or externalDatabase.existingSecret is required when postgresql.enabled is false" }}
+{{- if and .Values.sqlite.enabled .Values.postgresql.enabled }}
+{{- fail "Enable only one of sqlite.enabled or postgresql.enabled" }}
+{{- end }}
+{{- if and (not .Values.postgresql.enabled) (not .Values.sqlite.enabled) (empty .Values.externalDatabase.host) (empty .Values.externalDatabase.existingSecret) }}
+{{- fail "When postgresql.enabled is false: set sqlite.enabled=true, or externalDatabase.host / existingSecret" }}
 {{- end }}
 apiVersion: apps/v1
 kind: Deployment
@@ -79,8 +82,23 @@ spec:
           readinessProbe:
             {{- omit .Values.readinessProbe "enabled" | toYaml | nindent 12 }}
           {{- end }}
+          {{- if .Values.sqlite.enabled }}
+          volumeMounts:
+            - name: sqlite-data
+              mountPath: /app/data
+          {{- end }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
+      {{- if .Values.sqlite.enabled }}
+      volumes:
+        - name: sqlite-data
+          {{- if .Values.sqlite.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ include "charge-spot-quest.fullname" . }}-sqlite
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+      {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

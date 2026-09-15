@@ -88,12 +88,24 @@ docker build -t charge-spot-quest-api:local .
 
 **不要**把真实域名、集群内网 IP、密码写进公开 values / README；用 `charge-spot.example.com`、`pg.example.com` 这类占位符，密钥用集群外 Secret。
 
-### 数据库两种模式（二选一）
+### 数据库三种模式（三选一）
 
 | 模式 | 配置 | 适用 |
 |------|------|------|
-| **内置 PG** | `postgresql.enabled=true`（默认） | 演示 / MVP；单副本+PVC，非 HA |
+| **SQLite** | `sqlite.enabled=true` + `postgresql.enabled=false` | 最简演示；单副本，可选 PVC |
+| **内置 PG** | `postgresql.enabled=true`（默认） | MVP；单副本+PVC，非 HA |
 | **外置 PG** | `postgresql.enabled=false` + `externalDatabase.*`（或现成 Secret） | **生产推荐** |
+
+#### SQLite 示例（不要内置也不要外置 PG）
+
+```bash
+helm upgrade --install charge-spot-quest ./charts/charge-spot-quest \
+  -n charge-spot --create-namespace \
+  --set image.repository=ghcr.io/aaronyang0628/charge-spot-quest \
+  --set image.tag=0.1.0 \
+  --set postgresql.enabled=false \
+  --set sqlite.enabled=true
+```
 
 详细命令与 values 见 [charts/charge-spot-quest/README.md](charts/charge-spot-quest/README.md)。
 

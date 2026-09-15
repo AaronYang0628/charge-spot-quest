@@ -1,0 +1,18 @@
+{{- if and .Values.sqlite.enabled .Values.sqlite.persistence.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "charge-spot-quest.fullname" . }}-sqlite
+  labels:
+    {{- include "charge-spot-quest.labels" . | nindent 4 }}
+    app.kubernetes.io/component: sqlite
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.sqlite.persistence.size }}
+  {{- with .Values.sqlite.persistence.storageClass }}
+  storageClassName: {{ . | quote }}
+  {{- end }}
+{{- end }}

@@ -1,12 +1,12 @@
 # =============================================================================
 # charge-spot-quest Helm values
-# 邻里互助 · 共享充电 — k3s / Kubernetes scaffold for a future thin API + Postgres
+# 邻里互助 · 共享充电 — thin API + DB for k3s / Kubernetes
 # =============================================================================
-# Frontend today ships on GitHub Pages. This chart deploys a configurable API
-# (or static+API placeholder) image and wires DATABASE_URL from either:
-#   A) Bundled Postgres  内置 PG — postgresql.enabled: true  (MVP / local / demo)
-#   B) External Postgres 外置 PG — postgresql.enabled: false + externalDatabase.*
-# Production should prefer external managed Postgres. 生产请用外置 PG。
+# Database modes (pick ONE):
+#   A) SQLite          — sqlite.enabled: true,  postgresql.enabled: false
+#   B) Bundled Postgres — postgresql.enabled: true (default)
+#   C) External Postgres — postgresql.enabled: false + externalDatabase.*
+# Demo / 单节点可用 SQLite；多副本/生产请用外置 PG。
 # =============================================================================
 
 replicaCount: 1
@@ -59,19 +59,30 @@ env:
 extraEnv: []
 extraEnvFrom: []
 
+
+# -----------------------------------------------------------------------------
+# SQLite mode / 纯 SQLite（不要内置也不要外置 PG）
+# -----------------------------------------------------------------------------
+# helm ... --set sqlite.enabled=true --set postgresql.enabled=false
+# API uses DATABASE_URL=sqlite:////app/data/chargespot.sqlite
+# Optional PVC keeps bookings across pod restarts (single-replica only).
+sqlite:
+  enabled: false
+  # Path inside the container (must stay under /app/data for the image user)
+  path: /app/data/chargespot.sqlite
+  persistence:
+    enabled: true
+    size: 1Gi
+    storageClass: ""
+
 # -----------------------------------------------------------------------------
 # Postgres mode / 数据库模式
 # -----------------------------------------------------------------------------
-# 内置 PG (bundled): set postgresql.enabled: true
-#   → chart creates Deployment + Service + PVC + Secret (simple MVP postgres)
-#   → API gets DATABASE_URL pointing at in-cluster service
+# 内置 PG (bundled): postgresql.enabled: true  (and sqlite.enabled: false)
+# 外置 PG (external): postgresql.enabled: false + externalDatabase.*
+# SQLite:             sqlite.enabled: true + postgresql.enabled: false
 #
-# 外置 PG (external): set postgresql.enabled: false
-#   → supply externalDatabase.host / port / user / database / password
-#     or externalDatabase.existingSecret (keys: username, password, database, host, port)
-#   → API gets DATABASE_URL from those values
-#
-# Production: use external PG. 生产环境请关闭内置、使用外置数据库。
+# Production / multi-replica: external PG. Demo: SQLite is fine.
 # -----------------------------------------------------------------------------
 
 postgresql:
@@ -102,8 +113,8 @@ postgresql:
   service:
     port: 5432
 
-# Used when postgresql.enabled: false
-# 外置 Postgres：postgresql.enabled 为 false 时生效
+# Used when postgresql.enabled: false AND sqlite.enabled: false
+# 外置 Postgres：关内置、且未开 sqlite 时生效
 externalDatabase:
   host: pg.example.com
   port: 5432

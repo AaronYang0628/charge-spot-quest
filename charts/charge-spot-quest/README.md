@@ -14,8 +14,9 @@ Requires Kubernetes `>= 1.25`. No Bitnami subchart dependency (simpler for offli
 
 | Mode | Values | Notes |
 |------|--------|-------|
-| **Bundled / 内置 PG** | `postgresql.enabled: true` (default) | Chart deploys Postgres 16 + PVC + builds `DATABASE_URL` for the API. **MVP / demo only.** |
-| **External / 外置 PG** | `postgresql.enabled: false` + `externalDatabase.*` | Point at managed Postgres. **Prefer this in production.** |
+| **SQLite** | `sqlite.enabled: true` + `postgresql.enabled: false` | No Postgres pod. File DB + optional PVC. **单节点演示。** |
+| **Bundled / 内置 PG** | `postgresql.enabled: true` (default) | Chart deploys Postgres 16 + PVC. **MVP.** |
+| **External / 外置 PG** | `postgresql.enabled: false` + `externalDatabase.*` | Managed Postgres. **生产推荐。** |
 
 ### A) Bundled Postgres (内置)
 
@@ -63,6 +64,24 @@ helm upgrade --install charge-spot-quest ./charts/charge-spot-quest \
 ```
 
 Do **not** commit real hostnames or passwords. Placeholders like `pg.example.com` / `charge-spot.example.com` are intentional.
+
+
+### C) SQLite only（不要内置 / 不要外置 PG）
+
+关 Postgres，开 SQLite。数据写在容器 `/app/data`（默认挂 1Gi PVC，单副本演示用）：
+
+```bash
+helm upgrade --install charge-spot-quest ./charts/charge-spot-quest \
+  -n charge-spot --create-namespace \
+  --set image.repository=ghcr.io/aaronyang0628/charge-spot-quest \
+  --set image.tag=0.1.0 \
+  --set postgresql.enabled=false \
+  --set sqlite.enabled=true
+```
+
+不持久化（重启丢数据）可加 `--set sqlite.persistence.enabled=false`。
+
+> SQLite 不适合多副本；需要 HA / 多邻居并发稳一点时请用外置 PG。
 
 ## Optional Ingress
 
