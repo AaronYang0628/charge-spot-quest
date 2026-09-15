@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import secrets
+from typing import get_args
 from datetime import datetime, timezone
 
 from sqlalchemy import select
@@ -19,6 +20,7 @@ from app.schemas import (
     SpotStatus,
     TimePeriod,
     VehicleInfo,
+    VehicleType,
 )
 from app.timeutil import is_bookable_date, today_iso
 
@@ -26,7 +28,7 @@ BOOKABLE_SPOT = "C"
 PERIOD_ORDER: list[TimePeriod] = ["morning", "noon", "evening"]
 SPOT_IDS = ["A", "B", "C"]
 VALID_COLORS = {"black", "white", "gray", "red", "blue"}
-VALID_TYPES = {"convertible", "pickup"}
+VALID_TYPES = set(get_args(VehicleType))
 VALID_PERIODS = {"morning", "noon", "evening"}
 
 

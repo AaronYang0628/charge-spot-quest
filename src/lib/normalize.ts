@@ -1,11 +1,11 @@
-import { DEFAULT_VEHICLE, SPOT_IDS, VEHICLE_COLOR_LABELS } from '../types'
+import { DEFAULT_VEHICLE, SPOT_IDS, VEHICLE_COLOR_LABELS, VEHICLE_TYPE_LABELS } from '../types'
 import type { Booking, SpotId, VehicleInfo } from '../types'
 
 export function normalizeVehicle(value: unknown): VehicleInfo {
   const v = (value && typeof value === 'object' ? value : {}) as Partial<VehicleInfo>
   return {
     plate: typeof v.plate === 'string' ? v.plate.slice(0, 10) : '',
-    type: v.type === 'pickup' ? 'pickup' : 'convertible',
+    type: v.type && Object.hasOwn(VEHICLE_TYPE_LABELS, v.type) ? v.type : DEFAULT_VEHICLE.type,
     color: v.color && Object.hasOwn(VEHICLE_COLOR_LABELS, v.color) ? v.color : DEFAULT_VEHICLE.color,
   }
 }

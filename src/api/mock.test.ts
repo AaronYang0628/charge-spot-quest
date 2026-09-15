@@ -14,6 +14,7 @@ import { maskPlate } from '../lib/plate'
 import { loadState } from '../lib/storage'
 import { addDaysISO, todayISO } from '../lib/time'
 import { DEFAULT_VEHICLE } from '../types'
+import { VEHICLE_TYPES } from '../lib/vehicles'
 
 beforeEach(() => {
   const data = new Map<string, string>()
@@ -33,6 +34,14 @@ const input = (over: Partial<{ sessionId: string; date: string; period: 'morning
 })
 
 describe('reservation mock', () => {
+  it.each(VEHICLE_TYPES)('preserves %s through booking, storage and public rows', (type) => {
+    const request = { ...input(), vehicle: { ...DEFAULT_VEHICLE, type } }
+    const result = mockCreateBooking(request)
+    expect(result.ok).toBe(true)
+    expect(mockGetBookings('test')[0].vehicle.type).toBe(type)
+    expect(mockGetTodayBookings().find(row => row.id === result.booking?.id)?.vehicleType).toBe(type)
+    expect(normalizeVehicle(request.vehicle).type).toBe(type)
+  })
   it('seeds demo bookings and keeps A/B under maintenance', () => {
     expect(mockGetSpots().map(s => [s.id, s.maintenance, s.occupied])).toEqual([
       ['A', true, false],

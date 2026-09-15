@@ -2,7 +2,7 @@ export type SpotId = 'A' | 'B' | 'C'
 
 export type TimePeriod = 'morning' | 'noon' | 'evening'
 
-export type VehicleType = 'convertible' | 'pickup'
+export type VehicleType = 'convertible' | 'pickup' | 'ambulance' | 'police' | 'taxi' | 'sedan' | 'compact' | 'citycar' | 'muscle' | 'van'
 export type VehicleColor = 'black' | 'white' | 'gray' | 'red' | 'blue'
 
 export interface VehicleInfo {
@@ -84,6 +84,14 @@ export const PERIOD_HINTS: Record<TimePeriod, string> = {
 export const PERIOD_ORDER: TimePeriod[] = ['morning', 'noon', 'evening']
 
 export const VEHICLE_TYPE_LABELS: Record<VehicleType, string> = {
+  ambulance: '救护车',
+  police: '警车',
+  taxi: '出租车',
+  sedan: '经典轿车',
+  compact: '迷你车',
+  citycar: '都市轿车',
+  muscle: '肌肉跑车',
+  van: '厢式货车',
   convertible: '敞篷车',
   pickup: '皮卡',
 }

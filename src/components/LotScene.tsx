@@ -9,6 +9,7 @@ import { SPOT_LABELS } from '../types'
 import type { AnimPhase } from '../hooks/useAppState'
 import { Vehicle } from './SceneModels'
 import TownBackdrop from './TownBackdrop'
+import { createWheelRig } from '../lib/vehicle-motion'
 
 export interface LotSceneProps {
   vehicle: VehicleInfo | null; phase: AnimPhase; paused: boolean; reduced: boolean
@@ -72,13 +73,12 @@ function CameraRig({ paused }: Pick<LotSceneProps, 'paused'>) {
 }
 function AnimatedCar({ vehicle, phase, paused, onParked, onFinished }: LotSceneProps & { vehicle: VehicleInfo }) {
   const group = useRef<Group>(null)
-  const wheels = useRef<Object3D[]>([])
+  const spinWheels = useRef<(distance: number) => void>(() => {})
   const progress = useRef(0)
   const sent = useRef(false)
   const { invalidate } = useThree()
   const setModel = useCallback((model: Object3D) => {
-    wheels.current = []
-    model.traverse(o => { if (o.name.includes('Wheel_')) wheels.current.push(o) })
+    spinWheels.current = createWheelRig(model)
   }, [])
   useEffect(() => { progress.current = 0; sent.current = false; invalidate() }, [phase, invalidate])
   useFrame((_, delta) => {
@@ -92,7 +92,7 @@ function AnimatedCar({ vehicle, phase, paused, onParked, onFinished }: LotSceneP
       group.current.position.z = z
       // Gentle yaw so the entry model is visibly rotatable / not a fixed sprite.
       group.current.rotation.y = phase === 'parking' ? (1 - t) * 0.45 : 0
-      wheels.current.forEach(w => { w.rotation.x = -z/.36 })
+      spinWheels.current(z)
       if (t === 1 && !sent.current) { sent.current = true; (phase === 'parking' ? onParked : onFinished)() }
       invalidate()
     } else group.current.position.z = 0

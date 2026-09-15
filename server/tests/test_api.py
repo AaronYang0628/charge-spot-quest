@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import date, timedelta
+import pytest
 
 
 def test_health(client):
@@ -90,3 +91,22 @@ def test_demo_reset(client):
     assert r.json()["ok"] is True
     today = client.get("/api/bookings/today")
     assert len(today.json()) >= 3
+
+
+@pytest.mark.parametrize('vehicle_type', [
+    'convertible', 'pickup', 'ambulance', 'police', 'taxi',
+    'sedan', 'compact', 'citycar', 'muscle', 'van',
+])
+def test_ten_vehicle_types_roundtrip(client, vehicle_type):
+    from app.timeutil import today_iso
+    result = client.post('/api/bookings', json={
+        'sessionId': 'vehicle-test', 'date': today_iso(), 'period': 'morning',
+        'vehicle': {'plate': '浙A12345', 'type': vehicle_type, 'color': 'white'},
+    })
+    assert result.status_code == 200
+    assert result.json()['ok'] is True
+    booking_id = result.json()['booking']['id']
+    mine = client.get('/api/me/bookings', params={'sessionId': 'vehicle-test'}).json()
+    assert mine[0]['vehicle']['type'] == vehicle_type
+    public = client.get('/api/bookings/today').json()
+    assert next(row for row in public if row['id'] == booking_id)['vehicleType'] == vehicle_type

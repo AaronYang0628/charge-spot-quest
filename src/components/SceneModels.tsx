@@ -4,6 +4,7 @@ import { Mesh, MeshStandardMaterial, Object3D } from 'three'
 import type { VehicleInfo } from '../types'
 import { VEHICLE_PALETTE } from '../types'
 import { asset } from '../lib/asset'
+import { VEHICLE_DETAILS } from '../lib/vehicles'
 
 function useModel(name: string, color?: string) {
   const { scene } = useGLTF(asset(`/models/${name}.glb`))
@@ -28,7 +29,7 @@ function useModel(name: string, color?: string) {
 }
 
 export function Vehicle({ vehicle, onModel }: { vehicle: VehicleInfo; onModel?: (model: Object3D) => void }) {
-  const model = useModel(vehicle.type, VEHICLE_PALETTE[vehicle.color].body)
+  const model = useModel(vehicle.type, VEHICLE_DETAILS[vehicle.type].livery ? undefined : VEHICLE_PALETTE[vehicle.color].body)
   useEffect(() => { onModel?.(model) }, [model, onModel])
   return <primitive object={model} />
 }

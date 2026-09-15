@@ -468,5 +468,229 @@
     ],
     "bytes": 262416,
     "optimizedBytes": 46268
+  },
+  "ambulance": {
+    "source": "SM_Veh_Car_Ambo_01",
+    "sourcePack": "POLYGON City Pack 1.1",
+    "atlas": "PolygonCity_Texture_01_A.png",
+    "originalBounds": [
+      [
+        -0.1236305981874466,
+        -0.2683572769165039,
+        -1.4024077898966425e-8
+      ],
+      [
+        0.1236305981874466,
+        0.2410455048084259,
+        0.2582664489746094
+      ]
+    ],
+    "scale": 9.226490644760423,
+    "flippedToPositiveZ": false,
+    "paintSwatch": [
+      172,
+      62,
+      44
+    ],
+    "paintFaces": 0,
+    "livery": true,
+    "bytes": 509796,
+    "optimizedBytes": 181416
+  },
+  "police": {
+    "source": "SM_Veh_Car_Police_01",
+    "sourcePack": "POLYGON City Pack 1.1",
+    "atlas": "PolygonCity_Texture_01_A.png",
+    "originalBounds": [
+      [
+        -0.1086064875125885,
+        -0.27793118357658386,
+        -0.010615818202495575
+      ],
+      [
+        0.10860641300678253,
+        0.24681414663791656,
+        0.17411991953849792
+      ]
+    ],
+    "scale": 8.385019830860449,
+    "flippedToPositiveZ": false,
+    "paintSwatch": [
+      83,
+      121,
+      152
+    ],
+    "paintFaces": 0,
+    "livery": true,
+    "bytes": 514960,
+    "optimizedBytes": 177540
+  },
+  "taxi": {
+    "source": "SM_Veh_Car_Taxi_01",
+    "sourcePack": "POLYGON City Pack 1.1",
+    "atlas": "PolygonCity_Texture_01_A.png",
+    "originalBounds": [
+      [
+        -0.10860641300678253,
+        -0.2707781195640564,
+        -1.216444545093509e-8
+      ],
+      [
+        0.10860641300678253,
+        0.24681414663791656,
+        0.17224285006523132
+      ]
+    ],
+    "scale": 8.500899814996556,
+    "flippedToPositiveZ": false,
+    "paintSwatch": [
+      235,
+      162,
+      54
+    ],
+    "paintFaces": 0,
+    "livery": true,
+    "bytes": 493656,
+    "optimizedBytes": 174168
+  },
+  "sedan": {
+    "source": "SM_Veh_Car_Sedan_01",
+    "sourcePack": "POLYGON City Pack 1.1",
+    "atlas": "PolygonCity_Texture_01_A.png",
+    "originalBounds": [
+      [
+        -0.10860625654459,
+        -0.27068832516670227,
+        -0.010615818202495575
+      ],
+      [
+        0.10860656201839447,
+        0.24681414663791656,
+        0.15350960195064545
+      ]
+    ],
+    "scale": 8.502374847904504,
+    "flippedToPositiveZ": false,
+    "paintSwatch": [
+      69,
+      102,
+      169
+    ],
+    "paintFaces": 326,
+    "livery": false,
+    "bytes": 490692,
+    "optimizedBytes": 174388
+  },
+  "compact": {
+    "source": "SM_Veh_Car_Small_01",
+    "sourcePack": "POLYGON City Pack 1.1",
+    "atlas": "PolygonCity_Texture_01_A.png",
+    "originalBounds": [
+      [
+        -0.10215560346841812,
+        -0.21685375273227692,
+        -1.1671622779374502e-8
+      ],
+      [
+        0.10467788577079773,
+        0.19163133203983307,
+        0.17341843247413635
+      ]
+    ],
+    "scale": 8.813051281929685,
+    "flippedToPositiveZ": false,
+    "paintSwatch": [
+      69,
+      102,
+      169
+    ],
+    "paintFaces": 359,
+    "livery": false,
+    "bytes": 456484,
+    "optimizedBytes": 166596
+  },
+  "citycar": {
+    "source": "SM_Veh_Car_Medium_01",
+    "sourcePack": "POLYGON City Pack 1.1",
+    "atlas": "PolygonCity_Texture_01_A.png",
+    "originalBounds": [
+      [
+        -0.11827605962753296,
+        -0.2531740367412567,
+        -1.4053462393803784e-8
+      ],
+      [
+        0.11827605962753296,
+        0.24424530565738678,
+        0.18842123448848724
+      ]
+    ],
+    "scale": 8.24254235918748,
+    "flippedToPositiveZ": false,
+    "paintSwatch": [
+      69,
+      102,
+      169
+    ],
+    "paintFaces": 502,
+    "livery": false,
+    "bytes": 532448,
+    "optimizedBytes": 182420
+  },
+  "muscle": {
+    "source": "SM_Veh_Car_Muscle_01",
+    "sourcePack": "POLYGON City Pack 1.1",
+    "atlas": "PolygonCity_Texture_01_A.png",
+    "originalBounds": [
+      [
+        -0.1214992105960846,
+        -0.2951476275920868,
+        0.00007598586671520025
+      ],
+      [
+        0.121499203145504,
+        0.2691105306148529,
+        0.14935868978500366
+      ]
+    ],
+    "scale": 7.975072995488071,
+    "flippedToPositiveZ": false,
+    "paintSwatch": [
+      69,
+      102,
+      169
+    ],
+    "paintFaces": 426,
+    "livery": false,
+    "bytes": 474644,
+    "optimizedBytes": 166644
+  },
+  "van": {
+    "source": "SM_Veh_Car_Van_01",
+    "sourcePack": "POLYGON City Pack 1.1",
+    "atlas": "PolygonCity_Texture_01_A.png",
+    "originalBounds": [
+      [
+        -0.12363048642873764,
+        -0.2620505392551422,
+        -1.4107247814365564e-8
+      ],
+      [
+        0.12363049387931824,
+        0.2422953099012375,
+        0.20274074375629425
+      ]
+    ],
+    "scale": 9.219863726008779,
+    "flippedToPositiveZ": false,
+    "paintSwatch": [
+      69,
+      102,
+      169
+    ],
+    "paintFaces": 342,
+    "livery": false,
+    "bytes": 468556,
+    "optimizedBytes": 168492
   }
 }

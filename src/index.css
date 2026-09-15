@@ -114,3 +114,40 @@ body { background:#f2efe7; }
 .scene-tag.action { background:#fff9e7; color:#446f58; border:1px solid #e2dec4; box-shadow:0 3px 8px #38584425; padding:7px 10px; }
 .daylight { background:#f7eacd; color:#ad8549; border:1px solid #ecdfbc; padding:3px 6px; border-radius:12px; letter-spacing:0; }
 .vehicle-preview { background:radial-gradient(ellipse at 50% 80%, #dddccf 0%,#f8f6ee 65%); border-radius:12px; }
+
+/* Shared vehicle chooser: used by reservations and the review showroom. */
+.vehicle-chooser { min-width:0; margin-bottom:20px; border:1px solid #e3e7de; border-radius:18px; overflow:hidden; background:#f9faf5; }
+.vehicle-chooser-heading { display:flex; justify-content:space-between; padding:13px 16px 0; font-size:10px; letter-spacing:.08em; color:#5d756a; font-weight:700; }
+.vehicle-chooser-heading b { color:#a0aa9c; font-weight:400; }
+.vehicle-chooser .vehicle-preview { height:210px; border-radius:0; isolation:isolate; background:radial-gradient(ellipse at 50% 90%,#e3e7dc,#f9faf5 70%); }
+.preview-status { position:absolute; bottom:9px; left:13px; font-size:9px; color:#7d8b7f; pointer-events:none; }
+.preview-replay { position:absolute; right:10px; bottom:5px; font-size:10px; color:#4b7460; background:#fffdf5; border:1px solid #dbe1d2; padding:5px 8px; border-radius:15px; }
+.vehicle-name-row { display:flex; justify-content:space-between; align-items:center; gap:8px; padding:4px 14px 12px; text-align:center; }
+.vehicle-name-row h3 { margin:0; color:#233e32; font-size:18px; font-weight:800; }
+.vehicle-name-row p { margin:3px 0 0; font-size:10px; color:#839082; }
+.vehicle-name-row > button { width:32px; height:32px; border:1px solid #dce4d6; background:#fffef8; border-radius:50%; color:#638171; font-size:23px; line-height:1; }
+.vehicle-choices { display:flex; overflow-x:auto; gap:6px; padding:2px 12px 12px; scrollbar-width:thin; scrollbar-color:#ccd9ca transparent; overscroll-behavior-x:contain; }
+.vehicle-choices > button { flex:0 0 70px; display:flex; flex-direction:column; align-items:center; gap:4px; padding:8px 4px 6px; border-radius:10px; color:#94a696; background:#edf1e9; border:1px solid transparent; }
+.vehicle-choices > button span { font-size:10px; color:#6d7f70; white-space:nowrap; }
+.vehicle-choices > button[aria-pressed=true] { background:#e0eadc; color:#477556; border-color:#85a584; box-shadow:0 2px 0 #afc5ab; }
+.vehicle-choices > button[aria-pressed=true] span { color:#30553c; font-weight:700; }
+.vehicle-choice-icon { width:52px; height:26px; }
+.vehicle-colors-row { display:flex; justify-content:space-between; align-items:center; min-height:41px; padding:0 15px 10px; gap:10px; }
+.vehicle-colors-row > span { color:#899481; font-size:10px; }
+.vehicle-colors-row > div { display:flex; gap:10px; }
+.vehicle-colors-row button { width:18px; height:18px; border-radius:50%; border:1px solid #61705a30; }
+.vehicle-colors-row button[aria-pressed=true] { outline:2px solid #73906e; outline-offset:3px; }
+.showroom-page { max-width:880px; margin:0 auto; padding:26px 24px; min-height:100dvh; }
+.showroom-header { position:relative; padding:0 0 22px; }
+.showroom-header > a { color:#58715f; font-size:12px; text-decoration:none; }
+.showroom-header > span { float:right; font-size:10px; color:#919c8b; border:1px solid #d9e1d0; padding:4px 9px; border-radius:20px; }
+.showroom-header p { margin:26px 0 8px; color:#7c9479; letter-spacing:.12em; font-size:11px; }
+.showroom-header h1 { margin:0 0 8px; color:#254735; font-size:clamp(26px,4vw,38px); font-weight:800; letter-spacing:-.04em; }
+.showroom-header > div { font-size:12px; color:#8a937f; }
+.showroom-page .vehicle-chooser { border-radius:24px; box-shadow:0 18px 50px -36px #52715060; }
+.gallery .vehicle-choices { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); padding:4px 18px 14px; }
+.gallery .vehicle-choices > button { padding:10px 4px; }
+.gallery .vehicle-preview { height:clamp(240px,38vw,360px); }
+.gallery .vehicle-colors-row { padding:0 22px 18px; }
+.showroom-page footer { text-align:center; color:#9ca18f; font-size:10px; padding:2px 0; }
+@media(max-width:480px) { .showroom-page { padding:18px 14px; } .showroom-header { padding-bottom:16px; } .showroom-header p { margin-top:22px; } .gallery .vehicle-choices { padding:0 10px 12px; gap:5px; } .gallery .vehicle-choice-icon { width:46px; } }

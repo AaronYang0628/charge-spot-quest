@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field
 
 SpotId = Literal["A", "B", "C"]
 TimePeriod = Literal["morning", "noon", "evening"]
-VehicleType = Literal["convertible", "pickup"]
+VehicleType = Literal["convertible", "pickup", "ambulance", "police", "taxi", "sedan", "compact", "citycar", "muscle", "van"]
 VehicleColor = Literal["black", "white", "gray", "red", "blue"]
 
 

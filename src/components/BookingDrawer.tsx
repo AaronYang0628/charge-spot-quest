@@ -6,9 +6,6 @@ import {
   PERIOD_HINTS,
   PERIOD_LABELS,
   SPOT_LABELS,
-  VEHICLE_COLOR_LABELS,
-  VEHICLE_PALETTE,
-  VEHICLE_TYPE_LABELS,
 } from '../types'
 import { api } from '../api/client'
 import {
@@ -18,7 +15,7 @@ import {
   todayISO,
 } from '../lib/time'
 
-const VehiclePreview = lazy(() => import('./VehiclePreview'))
+const VehicleChooser = lazy(() => import('./VehicleChooser'))
 
 interface Props {
   open: boolean
@@ -30,8 +27,6 @@ interface Props {
 }
 
 const PERIODS: TimePeriod[] = ['morning', 'noon', 'evening']
-const COLORS = Object.keys(VEHICLE_COLOR_LABELS) as VehicleColor[]
-const TYPES = Object.keys(VEHICLE_TYPE_LABELS) as VehicleType[]
 
 /** STYLE-GUIDE §6: drawer down 220–280ms ease-out */
 const DRAWER_MS = 0.25
@@ -262,17 +257,9 @@ export function BookingDrawer({
                 </button>
               </div>
 
-              <div
-                className="mb-4 flex justify-center rounded-2xl py-2"
-                style={{
-                  background: 'var(--ui-tile, #f4f4f5)',
-                  border: '1px solid var(--ui-border)',
-                }}
-              >
-                <Suspense fallback={<div className="vehicle-preview">正在加载预览…</div>}>
-                  <VehiclePreview vehicle={vehicle} />
-                </Suspense>
-              </div>
+              <Suspense fallback={<div className="vehicle-preview">正在加载车库…</div>}>
+                <VehicleChooser vehicle={vehicle} onChange={v => { setType(v.type); setColor(v.color) }} />
+              </Suspense>
 
               <p
                 className="mb-2 text-[11px] font-bold uppercase tracking-wider"
@@ -346,66 +333,6 @@ export function BookingDrawer({
                   }}
                 />
               </label>
-
-              <p
-                className="mb-1.5 text-[11px] font-bold"
-                style={{ color: 'var(--ui-muted)' }}
-              >
-                车辆颜色
-              </p>
-              <div className="mb-3 flex flex-wrap gap-2">
-                {COLORS.map((c) => (
-                  <button
-                    key={c}
-                    type="button"
-                    onClick={() => setColor(c)}
-                    className="flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[11px] font-bold"
-                    style={{
-                      background: VEHICLE_PALETTE[c].body,
-                      color: c === 'white' || c === 'gray' ? '#111' : '#fff',
-                      boxShadow:
-                        color === c
-                          ? '0 0 0 2px #fff, 0 0 0 4px var(--ui-text)'
-                          : undefined,
-                    }}
-                  >
-                    {VEHICLE_COLOR_LABELS[c]}
-                  </button>
-                ))}
-              </div>
-
-              <p
-                className="mb-1.5 text-[11px] font-bold"
-                style={{ color: 'var(--ui-muted)' }}
-              >
-                车辆类型
-              </p>
-              <div className="mb-5 grid grid-cols-2 gap-1.5">
-                {TYPES.map((t) => {
-                  const on = type === t
-                  return (
-                    <button
-                      key={t}
-                      type="button"
-                      onClick={() => setType(t)}
-                      className="rounded-xl py-2 text-[11px] font-bold"
-                      style={
-                        on
-                          ? {
-                              background: 'var(--ui-accent)',
-                              color: '#ffffff',
-                            }
-                          : {
-                              background: 'var(--ui-tile, #f4f4f5)',
-                              color: 'var(--ui-text)',
-                            }
-                      }
-                    >
-                      {VEHICLE_TYPE_LABELS[t]}
-                    </button>
-                  )
-                })}
-              </div>
 
               <button
                 type="button"
