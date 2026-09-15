@@ -17,7 +17,18 @@ import {
   mockReset,
 } from './mock'
 
-const API_BASE = (import.meta.env.VITE_API_BASE as string | undefined)?.replace(/\/$/, '') || ''
+/**
+ * VITE_API_BASE:
+ * - unset → local mock (GitHub Pages demo)
+ * - "/" or "same" → same-origin relative /api/...
+ * - "http://host:port" → absolute API origin
+ */
+const rawApiBase = import.meta.env.VITE_API_BASE as string | undefined
+const USE_API = typeof rawApiBase === 'string' && rawApiBase.length > 0
+const API_BASE =
+  !USE_API || rawApiBase === '/' || rawApiBase === 'same'
+    ? ''
+    : rawApiBase.replace(/\/$/, '')
 
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
@@ -36,17 +47,17 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 /**
- * API client — uses real backend when VITE_API_BASE is set; otherwise local mock.
+ * API client — real backend when VITE_API_BASE is set; otherwise local mock.
  */
 export const api = {
   async getSpots(): Promise<SpotStatus[]> {
-    if (API_BASE) return apiFetch<SpotStatus[]>('/api/spots')
+    if (USE_API) return apiFetch<SpotStatus[]>('/api/spots')
     await delay(80)
     return mockGetSpots()
   },
 
   async getMyBookings(sessionId: string): Promise<Booking[]> {
-    if (API_BASE) {
+    if (USE_API) {
       return apiFetch<Booking[]>(`/api/me/bookings?sessionId=${encodeURIComponent(sessionId)}`)
     }
     await delay(60)
@@ -54,19 +65,19 @@ export const api = {
   },
 
   async getSpotBookings(spotId: SpotId): Promise<SpotBookingView[]> {
-    if (API_BASE) return apiFetch<SpotBookingView[]>(`/api/spots/${spotId}/bookings`)
+    if (USE_API) return apiFetch<SpotBookingView[]>(`/api/spots/${spotId}/bookings`)
     await delay(60)
     return mockGetSpotBookings(spotId)
   },
 
   async getTodayBookings(): Promise<SpotBookingView[]> {
-    if (API_BASE) return apiFetch<SpotBookingView[]>('/api/bookings/today')
+    if (USE_API) return apiFetch<SpotBookingView[]>('/api/bookings/today')
     await delay(60)
     return mockGetTodayBookings()
   },
 
   async getReservedPeriods(date: string, spotId: SpotId = 'C'): Promise<TimePeriod[]> {
-    if (API_BASE) {
+    if (USE_API) {
       return apiFetch<TimePeriod[]>(
         `/api/spots/${spotId}/reserved?date=${encodeURIComponent(date)}`,
       )
@@ -81,7 +92,7 @@ export const api = {
     period: TimePeriod
     vehicle: VehicleInfo
   }): Promise<BookResult> {
-    if (API_BASE) {
+    if (USE_API) {
       return apiFetch<BookResult>('/api/bookings', {
         method: 'POST',
         body: JSON.stringify(input),
@@ -92,7 +103,7 @@ export const api = {
   },
 
   async resetDemo(): Promise<void> {
-    if (API_BASE) {
+    if (USE_API) {
       await apiFetch<{ ok: boolean }>('/api/demo/reset', { method: 'POST' })
       return
     }

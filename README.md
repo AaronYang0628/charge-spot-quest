@@ -6,15 +6,15 @@
 
 | 层 | 现状 |
 |----|------|
-| 前端 Demo | GitHub Pages + 可选本地 mock |
-| 薄 API | FastAPI（`server/`），镜像已发 GHCR |
+| 前端 Demo | GitHub Pages（mock）或集群 Ingress `/`（同镜像 UI） |
+| API + UI 镜像 | FastAPI + Vite dist（根 `Dockerfile`）→ GHCR |
 | 部署 | Helm chart `charts/charge-spot-quest`（SQLite / 内置 PG / 外置 PG） |
 
 ## Demo
 
 - Pages：https://aaronyang0628.github.io/charge-spot-quest/  
   （国内可能较慢；生产静态站建议 OSS/CDN 或集群 Ingress。）
-- 镜像：`ghcr.io/aaronyang0628/charge-spot-quest:0.1.0`（另有 `latest`）  
+- 镜像：`ghcr.io/aaronyang0628/charge-spot-quest:0.1.1`（另有 `latest`、`0.1.0`；含前端 UI + API）  
   https://github.com/users/AaronYang0628/packages/container/package/charge-spot-quest
 
 ## UX
@@ -25,7 +25,7 @@
 - 抽屉：日期 ‹ ›（今天起 7 天）、早/中/晚、车牌/颜色/类型（**黑白灰红蓝**）
 - 场景可拖动；车不自动转
 
-前端未设 `VITE_API_BASE` 时走 `src/api/mock.ts`；接集群/本地 API 时设该变量。
+未设 `VITE_API_BASE` → `src/api/mock.ts`（Pages）。`VITE_API_BASE=/`（或 `same`）→ 同域 `/api`（Docker/Ingress）。绝对 URL → 直连该源。
 
 ## 本地开发
 
@@ -42,16 +42,23 @@ export ALLOW_DEMO_RESET=true   # 可选
 # 可选 Postgres: export DATABASE_URL='postgresql://USER:PASS@127.0.0.1:5432/chargespot'
 uvicorn app.main:app --host 0.0.0.0 --port 8080 --reload
 
-# 另一终端接 API
+# 另一终端接 API（绝对 URL）
 VITE_API_BASE=http://127.0.0.1:8080 npm run dev
+
+# 或同域：先 build 再让 API 托管 dist
+VITE_BASE=/ VITE_API_BASE=/ npm run build
+STATIC_DIR="$(pwd)/dist" uvicorn app.main:app --app-dir server --host 0.0.0.0 --port 8080
 ```
 
-- 健康：`/health`、`/readyz` · 文档：`/docs`
+- 健康：`/health`、`/readyz` · 文档：`/docs` · 有 static 时 `/` 为 SPA
 - 测试：`cd server && pytest -q` · `./scripts/smoke.sh http://127.0.0.1:8080`
+- 镜像：`docker build -f Dockerfile .`（勿用已废弃的 `server/Dockerfile`）
 
 ## Deploy — Helm / k3s（给其他 agent）
 
-用仓库 chart [`charts/charge-spot-quest`](charts/charge-spot-quest) 部署 **薄 API**。镜像默认已是 `ghcr.io/aaronyang0628/charge-spot-quest:0.1.0`。探针对 `/health`、`/readyz` 默认开启。
+用仓库 chart [`charts/charge-spot-quest`](charts/charge-spot-quest) 部署 **UI + API**（同镜像）。镜像默认 `ghcr.io/aaronyang0628/charge-spot-quest:0.1.1`。Ingress `/` 出前端，`/api` 为 API；探针对 `/health`、`/readyz` 默认开启。
+
+> **Agent handoff：** 拉 `0.1.1`/`latest` 后 `kubectl -n charge-spot rollout restart deploy/charge-spot-quest`（或 helm upgrade 改 tag）；打开 Ingress 根路径应是 HTML 应用，不再是 `{"detail":"Not Found"}`。
 
 **禁止**把真实域名、内网 IP、密码写进公开 values；用 `charge-spot.example.com`、`pg.example.com`，密钥用集群 Secret。
 
@@ -69,7 +76,7 @@ VITE_API_BASE=http://127.0.0.1:8080 npm run dev
 helm upgrade --install charge-spot-quest ./charts/charge-spot-quest \
   -n charge-spot --create-namespace \
   --set image.repository=ghcr.io/aaronyang0628/charge-spot-quest \
-  --set image.tag=0.1.0 \
+  --set image.tag=0.1.1 \
   --set postgresql.enabled=false \
   --set sqlite.enabled=true
 ```
@@ -82,7 +89,7 @@ helm upgrade --install charge-spot-quest ./charts/charge-spot-quest \
 helm upgrade --install charge-spot-quest ./charts/charge-spot-quest \
   -n charge-spot --create-namespace \
   --set image.repository=ghcr.io/aaronyang0628/charge-spot-quest \
-  --set image.tag=0.1.0 \
+  --set image.tag=0.1.1 \
   --set postgresql.enabled=true \
   --set postgresql.auth.password='CHANGE_ME'
 ```
@@ -97,7 +104,7 @@ kubectl -n charge-spot create secret generic charge-spot-db \
 helm upgrade --install charge-spot-quest ./charts/charge-spot-quest \
   -n charge-spot --create-namespace \
   --set image.repository=ghcr.io/aaronyang0628/charge-spot-quest \
-  --set image.tag=0.1.0 \
+  --set image.tag=0.1.1 \
   --set postgresql.enabled=false \
   --set sqlite.enabled=false \
   --set externalDatabase.host=pg.example.com \
@@ -115,7 +122,7 @@ kubectl -n charge-spot logs -l app.kubernetes.io/name=charge-spot-quest --tail=1
 curl -sS http://<svc-or-ingress>/health
 ```
 
-细则与 values 表见 [charts/charge-spot-quest/README.md](charts/charge-spot-quest/README.md)。镜像由 `.github/workflows/container.yml` 在 `server/**` 变更时推 GHCR。
+细则与 values 表见 [charts/charge-spot-quest/README.md](charts/charge-spot-quest/README.md)。镜像由 `.github/workflows/container.yml`（根 `Dockerfile`，前端+API）在相关路径变更时推 GHCR。
 
 ## Visual
 

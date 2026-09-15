@@ -5,6 +5,15 @@ on:
     branches:
       - main
     paths:
+      - 'Dockerfile'
+      - '.dockerignore'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'vite.config.ts'
+      - 'tsconfig*.json'
+      - 'index.html'
+      - 'src/**'
+      - 'public/**'
       - 'server/**'
       - '.github/workflows/container.yml'
     tags:
@@ -41,13 +50,14 @@ jobs:
             type=sha,prefix=sha-
             type=ref,event=tag
             type=raw,value=0.1.0,enable={{is_default_branch}}
+            type=raw,value=0.1.1,enable={{is_default_branch}}
             type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Build and push image
         uses: docker/build-push-action@v6
         with:
-          context: ./server
-          file: ./server/Dockerfile
+          context: .
+          file: ./Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

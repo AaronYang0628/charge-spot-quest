@@ -1,13 +1,14 @@
 # charge-spot-quest Helm chart
 
-部署 **邻里互助 · 共享充电** 薄 API（FastAPI）到 Kubernetes / k3s。
+部署 **邻里互助 · 共享充电** UI + API（同容器：Vite SPA + FastAPI）到 Kubernetes / k3s。
 
-- Chart / app：**0.1.0**
-- 默认镜像：`ghcr.io/aaronyang0628/charge-spot-quest:0.1.0`
+- Chart / app：**0.1.1**
+- 默认镜像：`ghcr.io/aaronyang0628/charge-spot-quest:0.1.1`（含前端；Ingress `/` 为应用，`/api` 为 API）
 - 需要：Kubernetes `>= 1.25`
 - 无 Bitnami 依赖（方便国内镜像环境）
 
 > **给其他 agent：** 总述在仓库根 [README.md](../../README.md)「Deploy — Helm / k3s」；本页是命令与 values 细则。  
+> 镜像自 **0.1.1** 起含 UI：`rollout restart` / helm upgrade 到 `0.1.1` 后 Ingress `/` 应出 HTML。  
 > **不要**提交真实域名 / 内网 IP / 密码；用 `charge-spot.example.com`、`pg.example.com`。
 
 ## 数据库模式（三选一）
@@ -26,7 +27,7 @@
 helm upgrade --install charge-spot-quest ./charts/charge-spot-quest \
   -n charge-spot --create-namespace \
   --set image.repository=ghcr.io/aaronyang0628/charge-spot-quest \
-  --set image.tag=0.1.0 \
+  --set image.tag=0.1.1 \
   --set postgresql.enabled=false \
   --set sqlite.enabled=true
 ```
@@ -41,7 +42,7 @@ helm upgrade --install charge-spot-quest ./charts/charge-spot-quest \
 helm upgrade --install charge-spot-quest ./charts/charge-spot-quest \
   -n charge-spot --create-namespace \
   --set image.repository=ghcr.io/aaronyang0628/charge-spot-quest \
-  --set image.tag=0.1.0 \
+  --set image.tag=0.1.1 \
   --set postgresql.enabled=true \
   --set sqlite.enabled=false \
   --set postgresql.auth.password='change-me'
@@ -59,7 +60,7 @@ kubectl -n charge-spot create secret generic charge-spot-db \
 helm upgrade --install charge-spot-quest ./charts/charge-spot-quest \
   -n charge-spot --create-namespace \
   --set image.repository=ghcr.io/aaronyang0628/charge-spot-quest \
-  --set image.tag=0.1.0 \
+  --set image.tag=0.1.1 \
   --set postgresql.enabled=false \
   --set sqlite.enabled=false \
   --set externalDatabase.host=pg.example.com \
@@ -80,7 +81,7 @@ helm upgrade --install charge-spot-quest ./charts/charge-spot-quest \
 
 | 资源 | 条件 |
 |------|------|
-| Deployment + Service（API） | 始终 |
+| Deployment + Service（UI+API） | 始终 |
 | ConfigMap / Secret（`DATABASE_URL` 等） | `secrets.create` 等 |
 | Ingress | `ingress.enabled` |
 | Postgres Deploy/Svc/PVC | `postgresql.enabled` |
@@ -93,7 +94,7 @@ helm upgrade --install charge-spot-quest ./charts/charge-spot-quest \
 | Key | Default | Notes |
 |-----|---------|-------|
 | `image.repository` | `ghcr.io/aaronyang0628/charge-spot-quest` | 已发布 |
-| `image.tag` | `0.1.0` | 也有 `latest` |
+| `image.tag` | `0.1.1` | 也有 `latest`、`0.1.0` |
 | `service.port` | `8080` | |
 | `sqlite.enabled` | `false` | 与 PG 互斥 |
 | `sqlite.persistence.size` | `1Gi` | |

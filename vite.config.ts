@@ -2,15 +2,15 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { defineConfig } from 'vite'
 
-// GitHub Pages serves under /charge-spot-quest/
+// Pages keeps /charge-spot-quest/; Docker sets VITE_BASE=/
 export default defineConfig({
-  base: '/charge-spot-quest/',
+  base: process.env.VITE_BASE || '/charge-spot-quest/',
   plugins: [react(), tailwindcss()],
   server: {
     host: true,
     port: 5173,
     proxy: {
-      // Optional: npm run dev with empty VITE_API_BASE and hit /api via proxy,
+      // Optional: npm run dev with VITE_API_BASE=/ and hit /api via proxy,
       // or set VITE_API_BASE=http://127.0.0.1:8080 for direct calls.
       '/api': {
         target: 'http://127.0.0.1:8080',

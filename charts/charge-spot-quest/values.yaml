@@ -1,6 +1,6 @@
 # =============================================================================
 # charge-spot-quest Helm values
-# 邻里互助 · 共享充电 — thin API + DB for k3s / Kubernetes
+# 邻里互助 · 共享充电 — UI + API + DB for k3s / Kubernetes
 # =============================================================================
 # Database modes (pick ONE):
 #   A) SQLite          — sqlite.enabled: true,  postgresql.enabled: false
@@ -15,7 +15,7 @@ image:
   # Placeholder until a real API image exists. Override at install time.
   # 占位镜像；发布真实 API 后用 --set image.repository/tag 覆盖。
   repository: ghcr.io/aaronyang0628/charge-spot-quest
-  tag: "0.1.0"
+  tag: "0.1.1"
   digest: ""
   pullPolicy: IfNotPresent
 

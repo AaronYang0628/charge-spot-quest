@@ -1,13 +1,17 @@
-"""FastAPI entrypoint for Charge Spot Quest API."""
+"""FastAPI entrypoint for Charge Spot Quest API (+ optional SPA static)."""
 
 from __future__ import annotations
 
 import logging
+import os
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 from app import __version__
 from app.config import Settings, get_settings
@@ -16,6 +20,54 @@ from app.routes import api_router, health_router
 from app.seed import seed_if_empty
 
 logger = logging.getLogger(__name__)
+
+# Paths that must never be swallowed by the SPA fallback.
+_SPA_RESERVED_PREFIXES = (
+    "api",
+    "health",
+    "readyz",
+    "docs",
+    "redoc",
+    "openapi.json",
+)
+
+
+def _resolve_static_dir() -> Path | None:
+    raw = os.environ.get("STATIC_DIR", "/app/static")
+    root = Path(raw)
+    if (root / "index.html").is_file():
+        return root
+    return None
+
+
+def _mount_spa(app: FastAPI, static_dir: Path) -> None:
+    """Serve Vite dist: hashed assets + SPA fallback. Does not shadow API/docs."""
+    assets = static_dir / "assets"
+    if assets.is_dir():
+        app.mount("/assets", StaticFiles(directory=str(assets)), name="assets")
+
+    @app.get("/")
+    async def spa_index() -> FileResponse:
+        return FileResponse(static_dir / "index.html")
+
+    @app.get("/{full_path:path}")
+    async def spa_fallback(full_path: str) -> FileResponse:
+        first = full_path.split("/", 1)[0]
+        if first in _SPA_RESERVED_PREFIXES or full_path in _SPA_RESERVED_PREFIXES:
+            raise HTTPException(status_code=404, detail="Not Found")
+
+        candidate = static_dir / full_path
+        # Prevent path traversal
+        try:
+            candidate.resolve().relative_to(static_dir.resolve())
+        except ValueError as exc:
+            raise HTTPException(status_code=404, detail="Not Found") from exc
+
+        if candidate.is_file():
+            return FileResponse(candidate)
+        return FileResponse(static_dir / "index.html")
+
+    logger.info("SPA static mounted from %s", static_dir)
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -62,6 +114,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     app.include_router(health_router)
     app.include_router(api_router)
+
+    static_dir = _resolve_static_dir()
+    if static_dir is not None:
+        _mount_spa(app, static_dir)
+
     return app
 
 
