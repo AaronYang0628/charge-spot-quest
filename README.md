@@ -1,102 +1,69 @@
 # 邻里互助 · 共享充电 · Charge Spot Quest
 
-> **需求与问题清单（权威）：** [docs/REQUIREMENTS-AND-ISSUES.md](docs/REQUIREMENTS-AND-ISSUES.md)
+> **需求与问题清单：** [docs/REQUIREMENTS-AND-ISSUES.md](docs/REQUIREMENTS-AND-ISSUES.md)
 
-主人在自有车位装了充电桩，开放给邻居预约慢充（Vite + React + TS + Tailwind + Framer Motion + React Three Fiber）。无登录、无支付；浏览器 `sessionId` + 本地 mock（待薄后端）。
+主人在自有车位装了充电桩，开放给邻居预约慢充。无登录、无支付；浏览器 `sessionId` 标识预约者。
 
-## Demo（前端）
+| 层 | 现状 |
+|----|------|
+| 前端 Demo | GitHub Pages + 可选本地 mock |
+| 薄 API | FastAPI（`server/`），镜像已发 GHCR |
+| 部署 | Helm chart `charts/charge-spot-quest`（SQLite / 内置 PG / 外置 PG） |
 
-GitHub Pages：https://aaronyang0628.github.io/charge-spot-quest/  
-（国内访问可能较慢；生产静态资源建议另挂国内 OSS/CDN 或 k3s。）
+## Demo
 
-## UX（当前）
+- Pages：https://aaronyang0628.github.io/charge-spot-quest/  
+  （国内可能较慢；生产静态站建议 OSS/CDN 或集群 Ingress。）
+- 镜像：`ghcr.io/aaronyang0628/charge-spot-quest:0.1.0`（另有 `latest`）  
+  https://github.com/users/AaronYang0628/packages/container/package/charge-spot-quest
 
-- 开屏：大日期 + 三维车位 **647 / 648 / 649**；每卡 **今早 / 中午 / 今晚** 空闲条，按本地时钟 **08 / 12 / 18** 切换「此刻」高亮
-- 三卡下方：**今日预约 / 登记**（仅今天，车牌打码）
-- 仅 **649** 可约；647/648 维护中
-- CTA：`🔋预约649车位充电` → 抽屉选日期（‹ › 无圆圈、不可早于今天、共 7 天）+ 早/中/晚 + 车牌/颜色/类型（颜色仅 **黑白灰红蓝**）
-- 场景可拖动调视角；车辆不自动旋转
-- Mock：`src/api/`；session：`localStorage`
+## UX
 
-## Dev
+- 三维车位 **647 / 648 / 649**；每卡 **今早 / 中午 / 今晚** 空闲，本地时钟 **08 / 12 / 18** 标「此刻」
+- 三卡下：**今日预约 / 登记**（仅今天，车牌打码）
+- 仅 **649** 可约；CTA：`🔋预约649车位充电`
+- 抽屉：日期 ‹ ›（今天起 7 天）、早/中/晚、车牌/颜色/类型（**黑白灰红蓝**）
+- 场景可拖动；车不自动转
 
-```bash
-npm install
-npm run dev    # http://localhost:5173  （注意 Vite base 为 /charge-spot-quest/，本地一般仍可用）
-npm test
-npm run build
-```
+前端未设 `VITE_API_BASE` 时走 `src/api/mock.ts`；接集群/本地 API 时设该变量。
 
-手机竖屏优先（~390px）。
-
-
-## Local backend（薄 API，先本地验证）
-
-> **尚未 push 镜像 / 尚未加 GHCR workflow。** 先在本机跑通，再考虑部署。
-
-Python FastAPI + SQLAlchemy。未设置 `DATABASE_URL` 时使用 SQLite 文件 `server/data/chargespot.sqlite`。
+## 本地开发
 
 ```bash
+# 前端
+npm install && npm run dev    # http://localhost:5173
+npm test && npm run build
+
+# 后端（默认 SQLite → server/data/chargespot.sqlite）
 cd server
-python3 -m venv .venv
-source .venv/bin/activate   # Windows: .venv\Scripts\activate
+python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-
-# 可选：允许演示重置
-export ALLOW_DEMO_RESET=true
-
-# 默认 SQLite；若有 Postgres：
-# export DATABASE_URL='postgresql://USER:PASS@127.0.0.1:5432/chargespot'
-
+export ALLOW_DEMO_RESET=true   # 可选
+# 可选 Postgres: export DATABASE_URL='postgresql://USER:PASS@127.0.0.1:5432/chargespot'
 uvicorn app.main:app --host 0.0.0.0 --port 8080 --reload
-```
 
-健康检查：`http://127.0.0.1:8080/health`、`/readyz`  
-OpenAPI：`http://127.0.0.1:8080/docs`
-
-### 前端接真实 API
-
-```bash
-# 终端 1：后端如上
-# 终端 2：前端
+# 另一终端接 API
 VITE_API_BASE=http://127.0.0.1:8080 npm run dev
 ```
 
-不设 `VITE_API_BASE` 时仍走 `src/api/mock.ts`。`vite.config.ts` 也代理了 `/api` → `:8080`（可把 `VITE_API_BASE` 留空并改 client 走相对路径；当前推荐显式 base）。
+- 健康：`/health`、`/readyz` · 文档：`/docs`
+- 测试：`cd server && pytest -q` · `./scripts/smoke.sh http://127.0.0.1:8080`
 
-### 测试 / Smoke
+## Deploy — Helm / k3s（给其他 agent）
 
-```bash
-cd server && source .venv/bin/activate
-pytest -q
-# 对已启动的服务：
-./scripts/smoke.sh http://127.0.0.1:8080
-```
+用仓库 chart [`charts/charge-spot-quest`](charts/charge-spot-quest) 部署 **薄 API**。镜像默认已是 `ghcr.io/aaronyang0628/charge-spot-quest:0.1.0`。探针对 `/health`、`/readyz` 默认开启。
 
-### Dockerfile（仅本地，勿 push）
+**禁止**把真实域名、内网 IP、密码写进公开 values；用 `charge-spot.example.com`、`pg.example.com`，密钥用集群 Secret。
 
-```bash
-cd server
-docker build -t charge-spot-quest-api:local .
-# 不要 docker push / 不要建 GHCR workflow，等本地验证后再说
-```
+数据库 **三选一**：
 
-## Deploy — Helm / k3s（给其他 agent 的部署说明）
-
-仓库内已有脚手架 chart：[`charts/charge-spot-quest`](charts/charge-spot-quest)（**v0.1.0**）。  
-**现状：** 前端仍可走 GitHub Pages + mock；集群用 chart 部署 **薄 API**（`ghcr.io/aaronyang0628/charge-spot-quest:0.1.0`）。未设 `DATABASE_URL` 时用容器内 SQLite；生产请外置 Postgres。`/health`、`/readyz` 已可用。
-
-**不要**把真实域名、集群内网 IP、密码写进公开 values / README；用 `charge-spot.example.com`、`pg.example.com` 这类占位符，密钥用集群外 Secret。
-
-### 数据库三种模式（三选一）
-
-| 模式 | 配置 | 适用 |
+| 模式 | 设置 | 适用 |
 |------|------|------|
-| **SQLite** | `sqlite.enabled=true` + `postgresql.enabled=false` | 最简演示；单副本，可选 PVC |
-| **内置 PG** | `postgresql.enabled=true`（默认） | MVP；单副本+PVC，非 HA |
-| **外置 PG** | `postgresql.enabled=false` + `externalDatabase.*`（或现成 Secret） | **生产推荐** |
+| **SQLite** | `sqlite.enabled=true` + `postgresql.enabled=false` | 最简单节点演示；默认 1Gi PVC |
+| **内置 PG** | `postgresql.enabled=true`（chart 默认） | MVP；单副本非 HA |
+| **外置 PG** | `postgresql.enabled=false` + `externalDatabase.*` 或现成 `DATABASE_URL` Secret | **生产推荐** |
 
-#### SQLite 示例（不要内置也不要外置 PG）
+### SQLite（不要内置、也不要外置 PG）
 
 ```bash
 helm upgrade --install charge-spot-quest ./charts/charge-spot-quest \
@@ -107,9 +74,9 @@ helm upgrade --install charge-spot-quest ./charts/charge-spot-quest \
   --set sqlite.enabled=true
 ```
 
-详细命令与 values 见 [charts/charge-spot-quest/README.md](charts/charge-spot-quest/README.md)。
+重启可丢数据时加：`--set sqlite.persistence.enabled=false`。
 
-### 内置 PG 示例
+### 内置 Postgres
 
 ```bash
 helm upgrade --install charge-spot-quest ./charts/charge-spot-quest \
@@ -117,14 +84,13 @@ helm upgrade --install charge-spot-quest ./charts/charge-spot-quest \
   --set image.repository=ghcr.io/aaronyang0628/charge-spot-quest \
   --set image.tag=0.1.0 \
   --set postgresql.enabled=true \
-  --set postgresql.auth.password='<CHANGE_ME>'
+  --set postgresql.auth.password='CHANGE_ME'
 ```
 
-### 外置 PG 示例（推荐生产）
+### 外置 Postgres（生产）
 
 ```bash
 kubectl -n charge-spot create namespace charge-spot --dry-run=client -o yaml | kubectl apply -f -
-
 kubectl -n charge-spot create secret generic charge-spot-db \
   --from-literal=DATABASE_URL='postgresql://USER:PASS@pg.example.com:5432/chargespot?sslmode=require'
 
@@ -133,6 +99,7 @@ helm upgrade --install charge-spot-quest ./charts/charge-spot-quest \
   --set image.repository=ghcr.io/aaronyang0628/charge-spot-quest \
   --set image.tag=0.1.0 \
   --set postgresql.enabled=false \
+  --set sqlite.enabled=false \
   --set externalDatabase.host=pg.example.com \
   --set secrets.create=false \
   --set secrets.existingSecret=charge-spot-db \
@@ -140,18 +107,17 @@ helm upgrade --install charge-spot-quest ./charts/charge-spot-quest \
   --set ingress.hosts[0].host=charge-spot.example.com
 ```
 
-Chart 会（在 `secrets.create=true` 时）根据内置/外置配置组装 `DATABASE_URL` 给 API；外置生产请优先用上面的 **existingSecret** 方式。
-
-### 部署后自检
+### 自检
 
 ```bash
 kubectl -n charge-spot get deploy,svc,ingress,pvc
 kubectl -n charge-spot logs -l app.kubernetes.io/name=charge-spot-quest --tail=100
+curl -sS http://<svc-or-ingress>/health
 ```
 
-可选 Ingress：`--set ingress.enabled=true` + `ingress.hosts[0].host=...`（占位域名即可写进私有 values）。
+细则与 values 表见 [charts/charge-spot-quest/README.md](charts/charge-spot-quest/README.md)。镜像由 `.github/workflows/container.yml` 在 `server/**` 变更时推 GHCR。
 
 ## Visual
 
-R3F 场景：`LotScene` + `public/models/*.glb`；2D 回退：`public/art/`。  
-美术方向：`design-refs/art-direction/`。Token：`src/theme/tokens.css`。
+R3F：`LotScene` + `public/models/*.glb`；回退 `public/art/`。  
+美术：`design-refs/art-direction/`。Token：`src/theme/tokens.css`。

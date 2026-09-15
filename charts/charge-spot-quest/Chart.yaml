@@ -1,9 +1,8 @@
 apiVersion: v2
 name: charge-spot-quest
-description: 邻里互助共享充电 — Charge Spot Quest (thin API + optional Postgres)
+description: 邻里互助共享充电 — Charge Spot Quest (thin API + SQLite / optional Postgres)
 type: application
 version: 0.1.0
 appVersion: "0.1.0"
 kubeVersion: ">=1.25.0-0"
-# No Bitnami / external chart deps — optional in-cluster Postgres is a simple
-# templates/postgres.yaml gated by postgresql.enabled (better for offline CN mirrors).
+# No Bitnami deps. DB modes: sqlite.enabled, postgresql.enabled (in-chart), or externalDatabase.
