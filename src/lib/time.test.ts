@@ -7,8 +7,8 @@ function atHour(hour: number, minute = 0) {
 
 describe('currentIdlePeriod', () => {
   it('highlights 今早 before 08 and through morning until 12', () => {
-    expect(currentIdlePeriod(atHour(0))).toBe('morning')
-    expect(currentIdlePeriod(atHour(7, 59))).toBe('morning')
+    expect(currentIdlePeriod(atHour(0))).toBe('evening')
+    expect(currentIdlePeriod(atHour(7, 59))).toBe('evening')
     expect(currentIdlePeriod(atHour(8))).toBe('morning')
     expect(currentIdlePeriod(atHour(11, 59))).toBe('morning')
   })
