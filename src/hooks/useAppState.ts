@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { api } from '../api/client'
-import type { Booking, BookResult, SpotId, SpotStatus, TimePeriod, VehicleInfo } from '../types'
+import type { Booking, BookResult, SpotBookingView, SpotStatus, TimePeriod, VehicleInfo } from '../types'
 import { BOOKABLE_SPOT, SPOT_LABELS } from '../types'
 import { clearAllData, loadState, saveState, saveVehicle } from '../lib/storage'
 import { todayISO } from '../lib/time'
@@ -10,8 +10,9 @@ export type AnimPhase = 'closing' | 'parking' | 'charging' | null
 export function useAppState() {
   const [state, setState] = useState(loadState)
   const [spots, setSpots] = useState<SpotStatus[]>([])
+  const [todayBookings, setTodayBookings] = useState<SpotBookingView[]>([])
+  const [todayLoading, setTodayLoading] = useState(true)
   const [drawerOpen, setDrawerOpen] = useState(false)
-  const [bookingsSpot, setBookingsSpot] = useState<SpotId | null>(null)
   const [animPhase, setAnimPhase] = useState<AnimPhase>(null)
   const [pending, setPending] = useState<Booking | null>(null)
   const [confirming, setConfirming] = useState(false)
@@ -24,9 +25,15 @@ export function useAppState() {
 
   const refresh = useCallback(async () => {
     const request = generation.current
-    const [list, bookings] = await Promise.all([api.getSpots(), api.getMyBookings(state.sessionId)])
+    const [list, bookings, today] = await Promise.all([
+      api.getSpots(),
+      api.getMyBookings(state.sessionId),
+      api.getTodayBookings(),
+    ])
     if (request !== generation.current) return
     setSpots(list)
+    setTodayBookings(today)
+    setTodayLoading(false)
     setState(s => ({ ...s, bookings }))
   }, [state.sessionId])
 
@@ -47,11 +54,6 @@ export function useAppState() {
       return
     }
     setDrawerOpen(true)
-  }
-
-  const openSpotBookings = (spotId: SpotId) => {
-    if (busy.current) return
-    setBookingsSpot(spotId)
   }
 
   const confirm = async (period: TimePeriod, vehicle: VehicleInfo, date: string) => {
@@ -99,16 +101,17 @@ export function useAppState() {
       clearAllData()
       setState(loadState())
       setSpots(await api.getSpots())
-      setAnimPhase(null); setPending(null); setResult(null); setDrawerOpen(false); setBookingsSpot(null)
+      setTodayBookings(await api.getTodayBookings())
+      setTodayLoading(false)
+      setAnimPhase(null); setPending(null); setResult(null); setDrawerOpen(false)
     } catch { setResult({ ok: false, reason: '无法清除浏览器存储' }) }
   }
 
   const parked = [...state.bookings].reverse().find(b => !b.cancelled && b.date === todayISO())
   return {
-    state, spots, drawerOpen, bookingsSpot, confirming, result, animPhase,
+    state, spots, todayBookings, todayLoading, drawerOpen, confirming, result, animPhase,
     animVehicle: pending?.vehicle ?? parked?.vehicle ?? null,
     openDrawer, closeDrawer: () => { if (!busy.current) setDrawerOpen(false) },
-    openSpotBookings, closeSpotBookings: () => setBookingsSpot(null),
     confirm,
     onDrawerExited: () => { if (animPhase === 'closing') setAnimPhase('parking') },
     onParked: () => setAnimPhase(p => p === 'parking' ? 'charging' : p),

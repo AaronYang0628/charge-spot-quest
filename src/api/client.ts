@@ -13,6 +13,7 @@ import {
   mockGetReservedPeriods,
   mockGetSpotBookings,
   mockGetSpots,
+  mockGetTodayBookings,
   mockReset,
 } from './mock'
 
@@ -34,6 +35,11 @@ export const api = {
   async getSpotBookings(spotId: SpotId): Promise<SpotBookingView[]> {
     await delay(60)
     return mockGetSpotBookings(spotId)
+  },
+
+  async getTodayBookings(): Promise<SpotBookingView[]> {
+    await delay(60)
+    return mockGetTodayBookings()
   },
 
   async getReservedPeriods(date: string, spotId?: SpotId): Promise<TimePeriod[]> {

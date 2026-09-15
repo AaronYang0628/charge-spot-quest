@@ -1,11 +1,12 @@
 import type { Booking, SpotBookingView, SpotId, SpotStatus, TimePeriod, VehicleInfo } from '../types'
-import { BOOKABLE_SPOT } from '../types'
+import { BOOKABLE_SPOT, PERIOD_ORDER, SPOT_IDS } from '../types'
 import { uid } from '../lib/id'
 import { maskPlate } from '../lib/plate'
 import { addDaysISO, isBookableDate, todayISO } from '../lib/time'
 import { normalizeBookings, normalizeVehicle } from '../lib/normalize'
 
-export const MOCK_KEY = 'charge-spot-quest-mock-v2'
+/** Bump when seed/palette shape changes so empty→fresh demo loads. */
+export const MOCK_KEY = 'charge-spot-quest-mock-v3'
 
 function seedBookings(today = todayISO()): Booking[] {
   const demo = 'demo-seed'
@@ -28,13 +29,15 @@ function seedBookings(today = todayISO()): Booking[] {
     cancelled: false,
   })
   return [
+    // Today — visible in 今日预约 list on first load (keep C free for demo booking)
     mk('A', 0, 'morning', '浙A12348', 'blue', 'convertible', 1),
+    mk('B', 0, 'evening', '苏C66552', 'gray', 'convertible', 1),
+    mk('C', 0, 'evening', '沪E77889', 'white', 'pickup', 1),
+    // Future seeds
     mk('A', 2, 'noon', '沪B88881', 'red', 'pickup', 2),
-    mk('B', 0, 'evening', '苏C66552', 'green', 'convertible', 1),
-    mk('B', 3, 'morning', '浙D90003', 'yellow', 'pickup', 2),
-    mk('C', 1, 'morning', '沪E77889', 'white', 'pickup', 1),
-    mk('C', 2, 'noon', '浙A10248', 'orange', 'convertible', 2),
-    mk('C', 4, 'evening', '浙F33117', 'blue', 'convertible', 3),
+    mk('B', 3, 'morning', '浙D90003', 'black', 'pickup', 2),
+    mk('C', 2, 'morning', '浙A10248', 'red', 'convertible', 2),
+    mk('C', 4, 'noon', '浙F33117', 'blue', 'convertible', 3),
   ]
 }
 
@@ -44,6 +47,13 @@ function read(): Booking[] {
     if (current !== null) {
       const parsed = normalizeBookings(JSON.parse(current))
       return parsed
+    }
+    const v2 = localStorage.getItem('charge-spot-quest-mock-v2')
+    if (v2 !== null) {
+      const migrated = normalizeBookings(JSON.parse(v2))
+      const bookings = migrated.length ? migrated : seedBookings()
+      write(bookings)
+      return bookings
     }
     const v1 = localStorage.getItem('charge-spot-quest-mock-v1')
     if (v1 !== null) {
@@ -99,16 +109,34 @@ export function mockGetSpotBookings(spotId: SpotId): SpotBookingView[] {
   return read()
     .filter((b) => b.spotId === spotId && !b.cancelled)
     .sort((a, b) => a.date.localeCompare(b.date) || a.period.localeCompare(b.period))
-    .map((b) => ({
-      id: b.id,
-      spotId: b.spotId,
-      date: b.date,
-      period: b.period,
-      status: 'booked' as const,
-      plateMasked: maskPlate(b.vehicle.plate),
-      vehicleType: b.vehicle.type,
-      vehicleColor: b.vehicle.color,
-    }))
+    .map(toView)
+}
+
+/** Today's bookings across all bays (privacy-masked). */
+export function mockGetTodayBookings(date = todayISO()): SpotBookingView[] {
+  const periodRank = (p: TimePeriod) => PERIOD_ORDER.indexOf(p)
+  const spotRank = (id: SpotId) => SPOT_IDS.indexOf(id)
+  return read()
+    .filter((b) => !b.cancelled && b.date === date)
+    .sort(
+      (a, b) =>
+        spotRank(a.spotId) - spotRank(b.spotId) ||
+        periodRank(a.period) - periodRank(b.period),
+    )
+    .map(toView)
+}
+
+function toView(b: Booking): SpotBookingView {
+  return {
+    id: b.id,
+    spotId: b.spotId,
+    date: b.date,
+    period: b.period,
+    status: 'booked',
+    plateMasked: maskPlate(b.vehicle.plate),
+    vehicleType: b.vehicle.type,
+    vehicleColor: b.vehicle.color,
+  }
 }
 
 export function mockCreateBooking(input: {

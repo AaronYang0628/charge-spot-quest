@@ -13,7 +13,6 @@ interface Props {
   paused: boolean; onSelectC: () => void; onParked: () => void; onFinished: () => void
 }
 export function ParkingLot({ spots, animVehicle, animPhase, paused, onSelectC, onParked, onFinished }: Props) {
-  const [reset, setReset] = useState(0)
   const [failed, setFailed] = useState(false)
   const visible = usePageVisible()
   const reduced = !!useReducedMotion()
@@ -37,23 +36,25 @@ export function ParkingLot({ spots, animVehicle, animPhase, paused, onSelectC, o
     </div>
   )
   return <section aria-label="三维停车场" className="scene-section">
-    <div className="scene-toolbar"><span>THE LITTLE TOWN <b>／ 小镇慢充</b></span><span className="daylight">☀ 日光正好</span></div>
+    <div className="scene-toolbar">
+      <span>邻里互助 <b>／ 共享充电</b></span>
+      <span className="daylight">⚡ 慢充共享</span>
+    </div>
     <div className="scene-canvas">
       {failed ? fallback : <SceneBoundary fallback={fallback} onError={() => setFailed(true)}>
-        <Suspense fallback={<div className="scene-loading">正在布置小镇…</div>}>
+        <Suspense fallback={<div className="scene-loading">正在加载车位…</div>}>
           <Canvas orthographic shadows dpr={[1,1.5]} frameloop={visible && !paused ? 'demand' : 'never'}
             camera={{ position: [9,13,13], zoom: 24, near: .1, far: 100 }}
             onCreated={({gl}) => { gl.domElement.addEventListener('webglcontextlost', e => { e.preventDefault(); setFailed(true) }) }}>
             <Suspense fallback={null}><LotScene vehicle={animVehicle} phase={animPhase} paused={paused || !visible}
-              reduced={reduced} reset={reset} reserved={reserved}
+              reduced={reduced} reserved={reserved}
               onSelect={onSelectC} onParked={onParked} onFinished={onFinished} /></Suspense>
           </Canvas>
         </Suspense>
       </SceneBoundary>}
     </div>
     <div className="scene-controls">
-      <span>{animPhase ? '预约效果演示 · 非设备实时状态' : reserved ? '车辆展示代表预约，非实际占用' : '把车停好，让生活慢一点。拖动可调整视角。'}</span>
-      <button type="button" onClick={() => setReset(v => v + 1)}>复位</button>
+      <span>{animPhase ? '预约效果演示 · 非设备实时状态' : reserved ? '车辆展示代表预约，非实际占用' : '邻居共享充电位。拖动可旋转视角。'}</span>
     </div>
     <button
       type="button"

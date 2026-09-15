@@ -37,25 +37,22 @@
   --ui-text: #18181b;
   --ui-muted: #71717a;
 
-  /* Vehicle body — light / body / shade */
-  --car-blue: #0088d0;
-  --car-blue-light: #5b9ad4;
-  --car-blue-dark: #002060;
-  --car-yellow: #d89000;
-  --car-yellow-light: #f0d000;
-  --car-yellow-dark: #804800;
-  --car-orange: #e89040;
-  --car-orange-light: #f0b000;
-  --car-orange-dark: #b85000;
+  /* Vehicle body — light / body / shade (黑/白/灰/红/蓝) */
+  --car-black: #2a2a2e;
+  --car-black-light: #4a4a50;
+  --car-black-dark: #111114;
   --car-white: #f0e0d8;
   --car-white-light: #f8f8f8;
   --car-white-dark: #c8b8a0;
+  --car-gray: #8a8a90;
+  --car-gray-light: #b0b0b6;
+  --car-gray-dark: #5a5a60;
   --car-red: #e23b2f;
   --car-red-light: #f80000;
   --car-red-dark: #680000;
-  --car-green: #3dbe3a;
-  --car-green-light: #98b850;
-  --car-green-dark: #285000;
+  --car-blue: #0088d0;
+  --car-blue-light: #5b9ad4;
+  --car-blue-dark: #002060;
 
   --car-window: #1c2430;
   --car-window-front: #2a3340;
@@ -64,29 +61,25 @@
   --car-wheel-hub: #444444;
   --car-bolt: #fde047;
 
-  --sprite-sedan-blue: ;
-  --sprite-sedan-yellow: ;
-  --sprite-sedan-orange: ;
+  --sprite-sedan-black: ;
   --sprite-sedan-white: ;
+  --sprite-sedan-gray: ;
   --sprite-sedan-red: ;
-  --sprite-sedan-green: ;
-  --sprite-suv-blue: ;
-  --sprite-suv-yellow: ;
-  --sprite-suv-orange: ;
+  --sprite-sedan-blue: ;
+  --sprite-suv-black: ;
   --sprite-suv-white: ;
+  --sprite-suv-gray: ;
   --sprite-suv-red: ;
-  --sprite-suv-green: ;
-  --sprite-van-blue: ;
-  --sprite-van-yellow: ;
-  --sprite-van-orange: ;
+  --sprite-suv-blue: ;
+  --sprite-van-black: ;
   --sprite-van-white: ;
+  --sprite-van-gray: ;
   --sprite-van-red: ;
-  --sprite-van-green: ;
-  --sprite-pickup-blue: ;
-  --sprite-pickup-yellow: ;
-  --sprite-pickup-orange: ;
+  --sprite-van-blue: ;
+  --sprite-pickup-black: ;
   --sprite-pickup-white: ;
+  --sprite-pickup-gray: ;
   --sprite-pickup-red: ;
-  --sprite-pickup-green: ;
+  --sprite-pickup-blue: ;
   --sprite-lot-bg: ;
 }

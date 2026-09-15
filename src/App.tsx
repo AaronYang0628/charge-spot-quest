@@ -2,7 +2,7 @@ import { useAppState } from './hooks/useAppState'
 import { ParkingLot } from './components/ParkingLot'
 import { SpotBars } from './components/SpotBars'
 import { BookingDrawer } from './components/BookingDrawer'
-import { BookingsSheet } from './components/BookingsSheet'
+import { TodayBookingsList } from './components/TodayBookingsList'
 import { ResultToast } from './components/ResultToast'
 import { SPOT_LABELS } from './types'
 import { formatHugeDate } from './lib/time'
@@ -11,16 +11,15 @@ export default function App() {
   const {
     state,
     spots,
+    todayBookings,
+    todayLoading,
     drawerOpen,
-    bookingsSpot,
     animVehicle,
     animPhase,
     confirming,
     result,
     openDrawer,
     closeDrawer,
-    openSpotBookings,
-    closeSpotBookings,
     confirm,
     dismissResult,
     resetAll, onDrawerExited, onParked, onFinished,
@@ -30,7 +29,6 @@ export default function App() {
 
   return (
     <div className="app-shell flex flex-col">
-      {/* top: current date — large & clear */}
       <header className="px-4 pb-1 pt-5 text-center">
         <p
           className="text-[11px] font-semibold tracking-[0.2em]"
@@ -48,7 +46,7 @@ export default function App() {
           className="mt-1.5 text-[11px] font-medium"
           style={{ color: 'var(--ui-muted)' }}
         >
-          充电车位 · 慢充预约
+          邻里互助 · 共享充电
         </p>
       </header>
 
@@ -58,29 +56,26 @@ export default function App() {
             spots={spots}
             animVehicle={animVehicle}
             animPhase={animPhase}
-            paused={drawerOpen || bookingsSpot !== null}
+            paused={drawerOpen}
             onParked={onParked} onFinished={onFinished}
             onSelectC={openDrawer}
           />
         </div>
 
-        {/* progress bars under each spot */}
         <div className="grid grid-cols-3 gap-2">
           {spots.map((s) => (
-            <SpotBars
-              key={s.id}
-              spot={s}
-              onOpenBookings={() => openSpotBookings(s.id)}
-            />
+            <SpotBars key={s.id} spot={s} />
           ))}
         </div>
+
+        <TodayBookingsList rows={todayBookings} loading={todayLoading} />
 
         <p
           className="px-1 text-center text-[10px] leading-relaxed"
           style={{ color: 'var(--ui-muted)' }}
         >
           仅 {SPOT_LABELS.C} 可约 · {SPOT_LABELS.A}/{SPOT_LABELS.B} 维护中 · 无需登录与支付
-          <span className="mt-1 block opacity-70">早 · 中 · 晚，把合适的时间留给你。</span>
+          <span className="mt-1 block opacity-70">早 · 中 · 晚，把合适的时间留给邻居。</span>
         </p>
 
         <button
@@ -101,8 +96,6 @@ export default function App() {
         confirming={confirming}
         onExited={onDrawerExited}
       />
-
-      <BookingsSheet spotId={bookingsSpot} onClose={closeSpotBookings} />
 
       <ResultToast
         open={!!result}

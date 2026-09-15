@@ -346,7 +346,7 @@ export function BookingDrawer({
                     className="flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[11px] font-bold"
                     style={{
                       background: VEHICLE_PALETTE[c].body,
-                      color: c === 'white' || c === 'yellow' ? '#111' : '#fff',
+                      color: c === 'white' || c === 'gray' ? '#111' : '#fff',
                       boxShadow:
                         color === c
                           ? '0 0 0 2px #fff, 0 0 0 4px var(--ui-text)'

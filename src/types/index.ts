@@ -3,13 +3,7 @@ export type SpotId = 'A' | 'B' | 'C'
 export type TimePeriod = 'morning' | 'noon' | 'evening'
 
 export type VehicleType = 'convertible' | 'pickup'
-export type VehicleColor =
-  | 'blue'
-  | 'yellow'
-  | 'orange'
-  | 'white'
-  | 'red'
-  | 'green'
+export type VehicleColor = 'black' | 'white' | 'gray' | 'red' | 'blue'
 
 export interface VehicleInfo {
   plate: string
@@ -22,7 +16,7 @@ export interface SpotStatus {
   bookable: boolean
   maintenance: boolean
   occupied: boolean
-  /** idle probability in next 1 hour, 0–1 */
+  /** idle probability in next 1 hour, 0–1 (kept for API; not shown on cards) */
   idleIn1h: number
   /** idle probability tonight, 0–1 */
   idleTonight: number
@@ -83,31 +77,31 @@ export const PERIOD_HINTS: Record<TimePeriod, string> = {
   evening: '晚间时段',
 }
 
+export const PERIOD_ORDER: TimePeriod[] = ['morning', 'noon', 'evening']
+
 export const VEHICLE_TYPE_LABELS: Record<VehicleType, string> = {
   convertible: '敞篷车',
   pickup: '皮卡',
 }
 
 export const VEHICLE_COLOR_LABELS: Record<VehicleColor, string> = {
-  blue: '蓝色',
-  yellow: '黄色',
-  orange: '橙色',
+  black: '黑色',
   white: '白色',
+  gray: '灰色',
   red: '红色',
-  green: '绿色',
+  blue: '蓝色',
 }
 
-/** Locked palette (STYLE-GUIDE v2 — bodies unchanged) — keep in sync with --car-* in theme/tokens.css */
+/** Locked palette — keep in sync with --car-* in theme/tokens.css */
 export const VEHICLE_PALETTE: Record<
   VehicleColor,
   { body: string; light: string; dark: string }
 > = {
-  blue: { body: '#0088D0', light: '#5B9AD4', dark: '#002060' },
-  yellow: { body: '#D89000', light: '#F0D000', dark: '#804800' },
-  orange: { body: '#E89040', light: '#F0B000', dark: '#B85000' },
+  black: { body: '#2A2A2E', light: '#4A4A50', dark: '#111114' },
   white: { body: '#F0E0D8', light: '#F8F8F8', dark: '#C8B8A0' },
+  gray: { body: '#8A8A90', light: '#B0B0B6', dark: '#5A5A60' },
   red: { body: '#E23B2F', light: '#F80000', dark: '#680000' },
-  green: { body: '#3DBE3A', light: '#98B850', dark: '#285000' },
+  blue: { body: '#0088D0', light: '#5B9AD4', dark: '#002060' },
 }
 
 export const DEFAULT_VEHICLE: VehicleInfo = {

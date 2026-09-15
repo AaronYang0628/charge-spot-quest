@@ -5,10 +5,9 @@ import { formatElapsed } from '../lib/time'
 
 interface Props {
   spot: SpotStatus
-  onOpenBookings?: () => void
 }
 
-export function SpotBars({ spot, onOpenBookings }: Props) {
+export function SpotBars({ spot }: Props) {
   const [now, setNow] = useState(() => Date.now())
   const label = SPOT_LABELS[spot.id]
 
@@ -63,7 +62,6 @@ export function SpotBars({ spot, onOpenBookings }: Props) {
         )}
       </div>
 
-      <Bar label="1小时内空闲" value={spot.idleIn1h} fill="var(--ui-success)" />
       <Bar label="今晚空闲" value={spot.idleTonight} fill="var(--ui-accent)" />
 
       {spot.occupied && (
@@ -92,22 +90,6 @@ export function SpotBars({ spot, onOpenBookings }: Props) {
             </div>
           </div>
         </div>
-      )}
-
-      {onOpenBookings && (
-        <button
-          type="button"
-          onClick={onOpenBookings}
-          className="mt-0.5 w-full rounded-lg py-1.5 text-[10px] font-bold"
-          style={{
-            background: 'var(--ui-tile, #f4f4f5)',
-            color: 'var(--ui-text)',
-            border: '1px solid var(--ui-border)',
-          }}
-          aria-label={`查看 ${label} 预约列表`}
-        >
-          预约列表
-        </button>
       )}
     </div>
   )

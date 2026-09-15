@@ -12,7 +12,7 @@ import TownBackdrop from './TownBackdrop'
 
 export interface LotSceneProps {
   vehicle: VehicleInfo | null; phase: AnimPhase; paused: boolean; reduced: boolean
-  reset: number; reserved: boolean
+  reserved: boolean
   onSelect: () => void; onParked: () => void; onFinished: () => void
 }
 const TARGET = new Vector3(0, 0, -2.1)
@@ -52,7 +52,7 @@ function Charger() {
     <mesh position={[.5,.95,0]} rotation={[0,0,0]} castShadow><torusGeometry args={[.38,.045,6,16,Math.PI*1.7]} /><meshStandardMaterial color="#273342" /></mesh>
   </group>
 }
-function CameraRig({ reset, paused }: Pick<LotSceneProps, 'reset' | 'paused'>) {
+function CameraRig({ paused }: Pick<LotSceneProps, 'paused'>) {
   const control = useRef<Controls>(null)
   const { camera, size, invalidate, scene, gl } = useThree()
   useEffect(() => {
@@ -64,7 +64,7 @@ function CameraRig({ reset, paused }: Pick<LotSceneProps, 'reset' | 'paused'>) {
     const c = camera as OrthographicCamera
     c.position.copy(CAMERA); c.zoom = base; c.lookAt(TARGET); c.updateProjectionMatrix()
     control.current?.target.copy(TARGET); control.current?.update(); invalidate()
-  }, [camera, base, reset, invalidate])
+  }, [camera, base, invalidate])
   return <OrbitControls ref={control} target={TARGET} enabled={!paused}
     enablePan={false} enableDamping={false} minAzimuthAngle={AZIMUTH - Math.PI*25/180}
     maxAzimuthAngle={AZIMUTH + Math.PI*25/180} minPolarAngle={Math.PI/6}
@@ -90,6 +90,8 @@ function AnimatedCar({ vehicle, phase, paused, onParked, onFinished }: LotSceneP
       const t = Math.min(1, progress.current / (phase === 'parking' ? 1.4 : .8))
       const z = phase === 'parking' ? 5.8 * (1-t)**3 : 0
       group.current.position.z = z
+      // Gentle yaw so the entry model is visibly rotatable / not a fixed sprite.
+      group.current.rotation.y = phase === 'parking' ? (1 - t) * 0.45 : 0
       wheels.current.forEach(w => { w.rotation.x = -z/.36 })
       if (t === 1 && !sent.current) { sent.current = true; (phase === 'parking' ? onParked : onFinished)() }
       invalidate()
@@ -124,7 +126,7 @@ export default function LotScene(props: LotSceneProps) {
     <directionalLight position={[-8,14,8]} intensity={3.2} castShadow
       shadow-mapSize={[1024,1024]} shadow-camera-left={-13} shadow-camera-right={13}
       shadow-camera-top={13} shadow-camera-bottom={-13} shadow-normalBias={.03} shadow-bias={-.0001} />
-    <CameraRig reset={props.reset} paused={props.paused} />
+    <CameraRig paused={props.paused} />
     <TownBackdrop />
     <Box position={[0,-.045,1]} size={[10.5,.08,9.5]} color="#7f9592" />
     <Box position={[0,0,-3.9]} size={[11,.18,1.2]} color="#efe0be" />

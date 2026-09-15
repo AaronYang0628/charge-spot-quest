@@ -5,6 +5,7 @@ import {
   mockGetReservedPeriods,
   mockGetSpotBookings,
   mockGetSpots,
+  mockGetTodayBookings,
   mockReset,
   MOCK_KEY,
 } from './mock'
@@ -42,21 +43,25 @@ describe('reservation mock', () => {
     expect(mockGetSpotBookings('B').length).toBeGreaterThan(0)
     expect(mockGetSpotBookings('C').length).toBeGreaterThan(0)
     expect(mockGetSpotBookings('A')[0].plateMasked).toMatch(/···/)
-    expect(mockGetReservedPeriods(todayISO(), 'C')).toEqual([])
+    // Seed includes today's evening on C; morning/noon stay free
+    expect(mockGetReservedPeriods(todayISO(), 'C')).toEqual(['evening'])
+    const today = mockGetTodayBookings()
+    expect(today.length).toBeGreaterThanOrEqual(1)
+    expect(today.every((r) => r.date === todayISO())).toBe(true)
+    expect(today.some((r) => r.plateMasked.includes('···'))).toBe(true)
   })
 
   it('reserves periods independently without setting physical occupancy', () => {
     expect(mockCreateBooking(input()).ok).toBe(true)
     expect(mockCreateBooking({ ...input(), sessionId: 'other' }).ok).toBe(false)
-    expect(mockCreateBooking({ ...input(), period: 'evening' }).ok).toBe(true)
+    expect(mockCreateBooking({ ...input(), period: 'noon' }).ok).toBe(true)
     expect(mockGetSpots()[2]).toMatchObject({
       occupied: false,
-      bookable: true,
-      reservedPeriods: ['morning', 'evening'],
+      bookable: false,
+      reservedPeriods: expect.arrayContaining(['morning', 'noon', 'evening']),
     })
     expect(mockGetSpots()[2].occupiedSince).toBeUndefined()
-    expect(mockCreateBooking({ ...input(), period: 'noon' }).ok).toBe(true)
-    expect(mockGetSpots()[2].bookable).toBe(false)
+    expect(mockCreateBooking({ ...input(), period: 'evening' }).ok).toBe(false)
   })
 
   it('allows booking within today+6 window and rejects outside', () => {
@@ -75,6 +80,7 @@ describe('reservation mock', () => {
     mockReset()
     expect(mockGetBookings('test')).toEqual([])
     expect(mockGetSpotBookings('C').length).toBeGreaterThan(0)
+    expect(mockGetTodayBookings().length).toBeGreaterThanOrEqual(1)
     expect(mockGetSpots()[2].bookable).toBe(true)
   })
 
@@ -94,6 +100,7 @@ describe('reservation mock', () => {
     })
     expect(mockGetBookings('legacy')[0].vehicle.type).toBe('convertible')
     expect(normalizeVehicle({ type: 'pickup', color: 'green' }).type).toBe('pickup')
+    expect(normalizeVehicle({ type: 'pickup', color: 'green' }).color).toBe('blue')
   })
 
   it('ignores malformed storage and masks plates', () => {
@@ -101,5 +108,13 @@ describe('reservation mock', () => {
     expect(mockGetBookings('test')).toEqual([])
     expect(maskPlate('浙A12348')).toBe('浙A···8')
     expect(normalizeVehicle({ color: 'invalid' })).toEqual(DEFAULT_VEHICLE)
+    expect(normalizeVehicle({ color: 'black' }).color).toBe('black')
+  })
+
+  it('only exposes black/white/gray/red/blue as vehicle colors', () => {
+    const allowed = new Set(['black', 'white', 'gray', 'red', 'blue'])
+    for (const row of mockGetTodayBookings()) {
+      expect(allowed.has(row.vehicleColor)).toBe(true)
+    }
   })
 })
