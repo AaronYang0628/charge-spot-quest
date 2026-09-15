@@ -84,19 +84,63 @@ export function mockGetReservedPeriods(date: string, spotId: SpotId = BOOKABLE_S
     .map((b) => b.period)
 }
 
+function idleFromOccupancy(
+  reserved: TimePeriod[],
+  period: TimePeriod,
+  freeIdle: number,
+  bookedIdle = 0.08,
+): number {
+  return reserved.includes(period) ? bookedIdle : freeIdle
+}
+
 export function mockGetSpots(): SpotStatus[] {
-  const reservedPeriods = mockGetReservedPeriods(todayISO(), 'C')
+  const today = todayISO()
+  const reservedC = mockGetReservedPeriods(today, 'C')
+  // Maintenance bays: static mock idle per period (no live occupancy feed).
+  const aMorning = 0.18
+  const aNoon = 0.28
+  const aEvening = 0.35
+  const bMorning = 0.1
+  const bNoon = 0.16
+  const bEvening = 0.22
+  // Bookable bay: derive from today's reserved periods when booked → low idle.
+  const cMorning = idleFromOccupancy(reservedC, 'morning', 0.82)
+  const cNoon = idleFromOccupancy(reservedC, 'noon', 0.71)
+  const cEvening = idleFromOccupancy(reservedC, 'evening', 0.64)
   return [
-    { id: 'A', maintenance: true, bookable: false, occupied: false, idleIn1h: 0.12, idleTonight: 0.35 },
-    { id: 'B', maintenance: true, bookable: false, occupied: false, idleIn1h: 0.08, idleTonight: 0.22 },
+    {
+      id: 'A',
+      maintenance: true,
+      bookable: false,
+      occupied: false,
+      idleIn1h: 0.12,
+      idleTonight: aEvening,
+      idleMorning: aMorning,
+      idleNoon: aNoon,
+      idleEvening: aEvening,
+    },
+    {
+      id: 'B',
+      maintenance: true,
+      bookable: false,
+      occupied: false,
+      idleIn1h: 0.08,
+      idleTonight: bEvening,
+      idleMorning: bMorning,
+      idleNoon: bNoon,
+      idleEvening: bEvening,
+    },
     {
       id: 'C',
       maintenance: false,
-      bookable: reservedPeriods.length < 3,
+      bookable: reservedC.length < 3,
       occupied: false,
       idleIn1h: 0.78,
-      idleTonight: 0.64,
-      reservedPeriods,
+      idleTonight: cEvening,
+      idleMorning: cMorning,
+      idleNoon: cNoon,
+      idleEvening: cEvening,
+      reservedPeriods: reservedC,
     },
   ]
 }

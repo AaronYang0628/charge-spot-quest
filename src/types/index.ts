@@ -18,8 +18,12 @@ export interface SpotStatus {
   occupied: boolean
   /** idle probability in next 1 hour, 0–1 (kept for API; not shown on cards) */
   idleIn1h: number
-  /** idle probability tonight, 0–1 */
+  /** idle probability tonight / evening, 0–1 (alias of idleEvening) */
   idleTonight: number
+  /** Per-period idle probability 0–1 (今早 / 中午 / 今晚) */
+  idleMorning: number
+  idleNoon: number
+  idleEvening: number
   /** if occupied: when occupancy started (ISO) */
   occupiedSince?: string
   /** parked vehicle for display */

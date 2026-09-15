@@ -59,11 +59,11 @@ export function ParkingLot({ spots, animVehicle, animPhase, paused, onSelectC, o
     <button
       type="button"
       className="reserve-button"
-      aria-label={`预约车位 ${SPOT_LABELS.C}`}
+      aria-label="预约649车位充电"
       disabled={!!animPhase || paused}
       onClick={onSelectC}
     >
-      {reserved ? `查看 ${SPOT_LABELS.C} 可约时段` : `预约 ${SPOT_LABELS.C}`} <span>↗</span>
+      🔋预约649车位充电
     </button>
   </section>
 }

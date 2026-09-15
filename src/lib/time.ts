@@ -50,3 +50,13 @@ export function formatElapsed(ms: number): string {
   if (h > 0) return `${h}:${pad2(m)}:${pad2(s)}`
   return `${pad2(m)}:${pad2(s)}`
 }
+
+/** Clock-driven idle-bar focus: 08→今早, 12→中午, 18→今晚 (pre-08 still 今早). */
+export type IdlePeriodFocus = 'morning' | 'noon' | 'evening'
+
+export function currentIdlePeriod(d = new Date()): IdlePeriodFocus {
+  const hour = d.getHours()
+  if (hour >= 18) return 'evening'
+  if (hour >= 12) return 'noon'
+  return 'morning'
+}

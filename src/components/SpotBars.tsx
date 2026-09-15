@@ -1,15 +1,28 @@
 import { useEffect, useState } from 'react'
-import type { SpotStatus } from '../types'
+import type { SpotStatus, TimePeriod } from '../types'
 import { SPOT_LABELS } from '../types'
-import { formatElapsed } from '../lib/time'
+import { currentIdlePeriod, formatElapsed } from '../lib/time'
 
 interface Props {
   spot: SpotStatus
 }
 
+const PERIOD_BARS: { key: TimePeriod; label: string; valueKey: 'idleMorning' | 'idleNoon' | 'idleEvening' }[] = [
+  { key: 'morning', label: '今早空闲', valueKey: 'idleMorning' },
+  { key: 'noon', label: '中午空闲', valueKey: 'idleNoon' },
+  { key: 'evening', label: '今晚空闲', valueKey: 'idleEvening' },
+]
+
 export function SpotBars({ spot }: Props) {
   const [now, setNow] = useState(() => Date.now())
   const label = SPOT_LABELS[spot.id]
+  const current = currentIdlePeriod(new Date(now))
+
+  useEffect(() => {
+    // Tick every minute so period highlight flips at 08/12/18 without a refresh.
+    const id = window.setInterval(() => setNow(Date.now()), 60_000)
+    return () => clearInterval(id)
+  }, [])
 
   useEffect(() => {
     if (!spot.occupied || !spot.occupiedSince) return
@@ -62,7 +75,21 @@ export function SpotBars({ spot }: Props) {
         )}
       </div>
 
-      <Bar label="今晚空闲" value={spot.idleTonight} fill="var(--ui-accent)" />
+      <div className="space-y-1">
+        {PERIOD_BARS.map(({ key, label: barLabel, valueKey }) => {
+          const value = spot[valueKey]
+          const active = key === current
+          return (
+            <Bar
+              key={key}
+              label={barLabel}
+              value={value}
+              active={active}
+              fill={active ? 'var(--ui-accent)' : 'var(--ui-muted)'}
+            />
+          )
+        })}
+      </div>
 
       {spot.occupied && (
         <div className="pt-0.5">
@@ -99,19 +126,35 @@ function Bar({
   label,
   value,
   fill,
+  active,
 }: {
   label: string
   value: number
   fill: string
+  active: boolean
 }) {
   const pct = Math.round(Math.min(1, Math.max(0, value)) * 100)
   return (
-    <div>
+    <div
+      className="rounded-md px-0.5 py-0.5"
+      style={
+        active
+          ? {
+              background: 'color-mix(in srgb, var(--ui-accent) 12%, transparent)',
+              boxShadow: 'inset 0 0 0 1px color-mix(in srgb, var(--ui-accent) 35%, transparent)',
+            }
+          : undefined
+      }
+      aria-current={active ? 'true' : undefined}
+    >
       <div
         className="mb-0.5 flex items-center justify-between text-[10px]"
-        style={{ color: 'var(--ui-muted)' }}
+        style={{ color: active ? 'var(--ui-text)' : 'var(--ui-muted)' }}
       >
-        <span>{label}</span>
+        <span className={active ? 'font-bold' : undefined}>
+          {label}
+          {active ? ' · 此刻' : ''}
+        </span>
         <span className="font-bold" style={{ color: 'var(--ui-text)' }}>
           {pct}%
         </span>
@@ -122,7 +165,12 @@ function Bar({
       >
         <div
           className="h-full transition-all duration-500"
-          style={{ width: `${pct}%`, background: fill, borderRadius: 4 }}
+          style={{
+            width: `${pct}%`,
+            background: fill,
+            borderRadius: 4,
+            opacity: active ? 1 : 0.55,
+          }}
         />
       </div>
     </div>

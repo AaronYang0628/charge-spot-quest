@@ -1,27 +1,11 @@
-import { Suspense, useRef, useState } from 'react'
-import { Canvas, useFrame, useThree } from '@react-three/fiber'
+import { Suspense, useState } from 'react'
+import { Canvas } from '@react-three/fiber'
 import { OrbitControls } from '@react-three/drei'
-import type { Group } from 'three'
 import { Vehicle } from './SceneModels'
 import { SceneBoundary } from './SceneBoundary'
 import { usePageVisible } from '../hooks/usePageVisible'
 import type { VehicleInfo } from '../types'
 import { VEHICLE_TYPE_LABELS } from '../types'
-
-function RotatingVehicle({ vehicle }: { vehicle: VehicleInfo }) {
-  const ref = useRef<Group>(null)
-  const { invalidate } = useThree()
-  useFrame((_, dt) => {
-    if (!ref.current) return
-    ref.current.rotation.y += dt * 0.55
-    invalidate()
-  })
-  return (
-    <group ref={ref}>
-      <Vehicle vehicle={vehicle} />
-    </group>
-  )
-}
 
 export default function VehiclePreview({ vehicle }: { vehicle: VehicleInfo }) {
   const [failed, setFailed] = useState(false)
@@ -48,7 +32,7 @@ export default function VehiclePreview({ vehicle }: { vehicle: VehicleInfo }) {
               <hemisphereLight intensity={2.5} />
               <directionalLight position={[-3, 6, 4]} intensity={2.5} />
               <Suspense fallback={null}>
-                <RotatingVehicle vehicle={vehicle} />
+                <Vehicle vehicle={vehicle} />
               </Suspense>
               <OrbitControls
                 enablePan={false}
