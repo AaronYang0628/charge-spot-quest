@@ -16,6 +16,7 @@ from fastapi.staticfiles import StaticFiles
 from app import __version__
 from app.config import Settings, get_settings
 from app.db import Base, get_engine, get_session_factory
+from app.schema_migrate import ensure_schema
 from app.routes import api_router, health_router
 from app.seed import seed_if_empty
 
@@ -78,6 +79,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         engine = get_engine(settings)
         Base.metadata.create_all(bind=engine)
+        ensure_schema(engine)
         factory = get_session_factory(settings)
         db = factory()
         try:

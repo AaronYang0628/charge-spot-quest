@@ -23,7 +23,7 @@ export function isHostPlateMasked(plateMasked: string | null | undefined): boole
 
 /**
  * Super cut-in is allowed only when bay C (649) is held by a host plate
- * for the current Shanghai idle period, or the spot's displayed vehicle is host.
+ * for the current Shanghai idle period (active booked row, not already replaced).
  */
 export function isHostCutInAvailable(opts: {
   spot?: SpotStatus | null
@@ -42,9 +42,10 @@ export function isHostCutInAvailable(opts: {
     (b) =>
       b.spotId === spotId &&
       b.period === period &&
+      b.status === 'booked' &&
       isHostPlateMasked(b.plateMasked),
   )
 }
 
-export const HOST_CUT_IN_STUB_MESSAGE =
-  '超级插队功能开发中，5元通道仅可插车主（浙ACU6508 / 浙AY75C1）的队'
+export const CUT_IN_QR_CAPTION = '¥5 · 超级插队 · 今晚你先充电'
+export const CUT_IN_NEED_PLATE = '请先填写车牌号'

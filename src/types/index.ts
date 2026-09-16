@@ -40,18 +40,23 @@ export interface Booking {
   vehicle: VehicleInfo
   createdAt: string
   cancelled: boolean
+  supersededBy?: string
+  cancelReason?: string
 }
 
 /** Public per-bay booking row (no session id). */
+export type SpotBookingStatus = 'booked' | 'cut_in_replaced'
+
 export interface SpotBookingView {
   id: string
   spotId: SpotId
   date: string
   period: TimePeriod
-  status: 'booked'
+  status: SpotBookingStatus
   plateMasked: string
   vehicleType: VehicleType
   vehicleColor: VehicleColor
+  supersededBy?: string
 }
 
 export interface AppState {

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from sqlalchemy import Boolean, DateTime, Index, String, UniqueConstraint
+from sqlalchemy import Boolean, DateTime, Index, String, text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db import Base
@@ -17,7 +17,16 @@ def utcnow() -> datetime:
 class BookingRow(Base):
     __tablename__ = "bookings"
     __table_args__ = (
-        UniqueConstraint("spot_id", "date", "period", name="uq_spot_date_period"),
+        # Active bookings only — cancelled (cut-in replaced) rows stay visible in lists.
+        Index(
+            "uq_spot_date_period_active",
+            "spot_id",
+            "date",
+            "period",
+            unique=True,
+            sqlite_where=text("cancelled = 0"),
+            postgresql_where=text("cancelled = false"),
+        ),
         Index("ix_bookings_session", "session_id"),
         Index("ix_bookings_date", "date"),
     )
@@ -32,3 +41,5 @@ class BookingRow(Base):
     vehicle_type: Mapped[str] = mapped_column(String(32), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     cancelled: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    superseded_by: Mapped[str | None] = mapped_column(String(64), nullable=True, default=None)
+    cancel_reason: Mapped[str | None] = mapped_column(String(32), nullable=True, default=None)

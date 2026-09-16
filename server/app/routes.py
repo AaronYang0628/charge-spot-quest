@@ -6,7 +6,16 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.orm import Session
 
 from app.db import get_db
-from app.schemas import BookResult, Booking, CreateBookingBody, HealthResponse, SpotBookingView, SpotStatus, TimePeriod
+from app.schemas import (
+    BookResult,
+    Booking,
+    CreateBookingBody,
+    CutInBookingBody,
+    HealthResponse,
+    SpotBookingView,
+    SpotStatus,
+    TimePeriod,
+)
 from app import service
 from app.dingtalk import notify_booking
 from app.seed import reset_and_seed
@@ -75,6 +84,20 @@ def create_booking(request: Request, body: CreateBookingBody, db: Session = Depe
             getattr(settings, "dingtalk_webhook_url", None),
             result.booking,
             sec_secret=getattr(settings, "dingtalk_sec_secret", None),
+        )
+    return result
+
+
+@api_router.post("/bookings/cut-in", response_model=BookResult)
+def cut_in_booking(request: Request, body: CutInBookingBody, db: Session = Depends(get_db)) -> BookResult:
+    result = service.create_cut_in(db, body)
+    if result.ok and result.booking is not None:
+        settings = request.app.state.settings
+        notify_booking(
+            getattr(settings, "dingtalk_webhook_url", None),
+            result.booking,
+            sec_secret=getattr(settings, "dingtalk_sec_secret", None),
+            kind="cut_in",
         )
     return result
 

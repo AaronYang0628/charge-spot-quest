@@ -5,9 +5,6 @@ import { currentIdlePeriod, formatElapsed } from '../lib/time'
 
 interface Props {
   spot: SpotStatus
-  /** Show host-only cut-in stub under this bay card. */
-  showCutIn?: boolean
-  onCutIn?: () => void
 }
 
 const PERIOD_META: Record<TimePeriod, { label: string; valueKey: 'idleMorning' | 'idleNoon' | 'idleEvening' }> = {
@@ -23,7 +20,7 @@ const SPOT_POWER_KW: Record<SpotId, number> = {
   C: 7,
 }
 
-export function SpotBars({ spot, showCutIn, onCutIn }: Props) {
+export function SpotBars({ spot }: Props) {
   const [now, setNow] = useState(() => Date.now())
   const label = SPOT_LABELS[spot.id]
   const current = currentIdlePeriod(new Date(now))
@@ -130,21 +127,6 @@ export function SpotBars({ spot, showCutIn, onCutIn }: Props) {
             </div>
           </div>
         </div>
-      )}
-
-      {showCutIn && onCutIn && (
-        <button
-          type="button"
-          onClick={onCutIn}
-          className="w-full rounded-lg py-1.5 text-[10px] font-black leading-tight"
-          style={{
-            background: 'color-mix(in srgb, var(--ui-warn) 14%, transparent)',
-            color: 'var(--ui-warn)',
-            border: '1px solid color-mix(in srgb, var(--ui-warn) 45%, transparent)',
-          }}
-        >
-          超级插队5元
-        </button>
       )}
     </div>
   )

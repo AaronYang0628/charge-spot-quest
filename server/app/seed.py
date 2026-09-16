@@ -46,7 +46,7 @@ def seed_if_empty(db: Session) -> int:
         # Today — visible in 今日预约 (keep C morning/noon free for demo booking)
         mk("A", 0, "morning", "浙A12348", "blue", "convertible", 1),
         mk("B", 0, "evening", "苏C66552", "gray", "convertible", 1),
-        mk("C", 0, "evening", "沪E77889", "white", "pickup", 1),
+        mk("C", 0, "evening", "浙ACU6508", "white", "pickup", 1),
         # Future seeds
         mk("A", 2, "noon", "沪B88881", "red", "pickup", 2),
         mk("B", 3, "morning", "浙D90003", "black", "pickup", 2),

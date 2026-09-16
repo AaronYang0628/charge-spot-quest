@@ -22,5 +22,11 @@ export function normalizeBookings(value: unknown): Booking[] {
         ['morning', 'noon', 'evening'].includes(b.period) &&
         SPOT_IDS.includes(b.spotId as SpotId),
     )
-    .map((b) => ({ ...b, vehicle: normalizeVehicle(b.vehicle), cancelled: !!b.cancelled }))
+    .map((b) => ({
+      ...b,
+      vehicle: normalizeVehicle(b.vehicle),
+      cancelled: !!b.cancelled,
+      supersededBy: typeof b.supersededBy === 'string' ? b.supersededBy : undefined,
+      cancelReason: typeof b.cancelReason === 'string' ? b.cancelReason : undefined,
+    }))
 }

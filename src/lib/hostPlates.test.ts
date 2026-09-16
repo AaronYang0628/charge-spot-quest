@@ -79,4 +79,24 @@ describe('hostPlates', () => {
       }),
     ).toBe(false)
   })
+
+  it('ignores already cut-in-replaced host rows', () => {
+    expect(
+      isHostCutInAvailable({
+        period: 'evening',
+        todayBookings: [
+          {
+            id: '1',
+            spotId: 'C',
+            date: '2026-09-16',
+            period: 'evening',
+            status: 'cut_in_replaced',
+            plateMasked: maskPlate('浙ACU6508'),
+            vehicleType: 'sedan',
+            vehicleColor: 'white',
+          },
+        ],
+      }),
+    ).toBe(false)
+  })
 })

@@ -296,3 +296,150 @@ def test_dingtalk_skipped_without_env(client, monkeypatch):
     )
     assert r.json()["ok"] is True
     assert calls == []
+
+
+def test_cut_in_supersedes_host_and_notifies(client, monkeypatch):
+    from app.timeutil import current_idle_period, today_iso
+    from app.host_plates import HOST_PLATES
+
+    calls = []
+
+    class FakeResponse:
+        status_code = 200
+
+        def json(self):
+            return {"errcode": 0}
+
+    class FakeClient:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return False
+
+        def post(self, url, json=None):
+            calls.append({"url": url, "json": json})
+            return FakeResponse()
+
+    client.app.state.settings.dingtalk_webhook_url = (
+        "https://oapi.dingtalk.com/robot/send?access_token=test-token-only"
+    )
+    client.app.state.settings.dingtalk_sec_secret = "SEC000testsecret"
+    import app.dingtalk as dingtalk
+
+    monkeypatch.setattr(dingtalk.httpx, "Client", FakeClient)
+
+    today = today_iso()
+    period = current_idle_period()
+    host_plate = next(iter(HOST_PLATES))
+
+    # Ensure host owns current period (seed has host on evening)
+    if period != "evening":
+        # Free evening conflict not needed; plant host on current period
+        # Morning/noon are free in seed
+        plant = client.post(
+            "/api/bookings",
+            json={
+                "sessionId": "host-plant",
+                "date": today,
+                "period": period,
+                "vehicle": {"plate": host_plate, "color": "blue", "type": "sedan"},
+            },
+        )
+        assert plant.json()["ok"] is True
+
+    # Empty plate rejected
+    empty = client.post(
+        "/api/bookings/cut-in",
+        json={
+            "sessionId": "cut",
+            "vehicle": {"plate": "  ", "color": "red", "type": "compact"},
+        },
+    )
+    assert empty.json()["ok"] is False
+    assert "车牌" in (empty.json()["reason"] or "")
+
+    r = client.post(
+        "/api/bookings/cut-in",
+        json={
+            "sessionId": "cut-in-user",
+            "vehicle": {"plate": "沪A99999", "color": "red", "type": "compact"},
+        },
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["ok"] is True
+    assert data["booking"]["vehicle"]["plate"] == "沪A99999"
+    assert data["booking"]["period"] == period
+
+    today_rows = client.get("/api/bookings/today").json()
+    period_rows = [row for row in today_rows if row["spotId"] == "C" and row["period"] == period]
+    statuses = {row["status"] for row in period_rows}
+    assert "cut_in_replaced" in statuses
+    assert "booked" in statuses
+    assert any(row["status"] == "cut_in_replaced" for row in period_rows)
+
+    reserved = client.get("/api/spots/C/reserved", params={"date": today}).json()
+    assert period in reserved
+
+    assert any("超级插队" in c["json"]["text"]["content"] for c in calls)
+
+
+def test_cut_in_rejects_non_host(client):
+    from app.timeutil import current_idle_period, today_iso
+
+    today = today_iso()
+    period = current_idle_period()
+    # If evening is host-seeded, book a different free period with non-host first then...
+    # Force: demo reset then create non-host on a free slot; if current is evening (host),
+    # replace by booking morning with non-host and monkeypatch? Simpler: only test when
+    # we can plant non-host on current period.
+    if period == "evening":
+        # Cancel path: create cut-in first to clear host, then normal book non-host is already active.
+        # Instead post cut-in with host already there — skip by planting on morning via date trick.
+        # Book noon with non-host and temporarily we need current to be noon — skip dynamic.
+        # Use service directly after clearing evening:
+        from app.db import get_session_factory
+        from app.models import BookingRow
+        from sqlalchemy import select
+
+        factory = get_session_factory()
+        db = factory()
+        try:
+            row = db.scalar(
+                select(BookingRow).where(
+                    BookingRow.cancelled.is_(False),
+                    BookingRow.spot_id == "C",
+                    BookingRow.date == today,
+                    BookingRow.period == period,
+                )
+            )
+            assert row is not None
+            row.plate = "沪E77889"
+            db.commit()
+        finally:
+            db.close()
+    else:
+        plant = client.post(
+            "/api/bookings",
+            json={
+                "sessionId": "non-host",
+                "date": today,
+                "period": period,
+                "vehicle": {"plate": "沪E77889", "color": "white", "type": "pickup"},
+            },
+        )
+        assert plant.json()["ok"] is True
+
+    r = client.post(
+        "/api/bookings/cut-in",
+        json={
+            "sessionId": "cut",
+            "vehicle": {"plate": "浙B12345", "color": "blue", "type": "sedan"},
+        },
+    )
+    assert r.json()["ok"] is False
+    assert "车主" in (r.json()["reason"] or "")

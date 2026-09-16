@@ -6,23 +6,25 @@ import secrets
 from typing import get_args
 from datetime import datetime, timezone
 
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.host_plates import is_host_plate
 from app.models import BookingRow
 from app.plate import mask_plate
 from app.schemas import (
     Booking,
     BookResult,
     CreateBookingBody,
+    CutInBookingBody,
     SpotBookingView,
     SpotStatus,
     TimePeriod,
     VehicleInfo,
     VehicleType,
 )
-from app.timeutil import is_bookable_date, today_iso
+from app.timeutil import current_idle_period, is_bookable_date, today_iso
 
 BOOKABLE_SPOT = "C"
 PERIOD_ORDER: list[TimePeriod] = ["morning", "noon", "evening"]
@@ -34,6 +36,14 @@ VALID_PERIODS = {"morning", "noon", "evening"}
 
 def _uid(prefix: str = "bk") -> str:
     return f"{prefix}_{secrets.token_hex(8)}"
+
+
+def _iso_z(dt: datetime) -> str:
+    return (
+        dt.isoformat().replace("+00:00", "Z")
+        if dt.tzinfo
+        else dt.isoformat() + "Z"
+    )
 
 
 def _row_to_booking(row: BookingRow) -> Booking:
@@ -48,28 +58,44 @@ def _row_to_booking(row: BookingRow) -> Booking:
             color=row.color,  # type: ignore[arg-type]
             type=row.vehicle_type,  # type: ignore[arg-type]
         ),
-        createdAt=row.created_at.isoformat().replace("+00:00", "Z")
-        if row.created_at.tzinfo
-        else row.created_at.isoformat() + "Z",
+        createdAt=_iso_z(row.created_at),
         cancelled=row.cancelled,
+        supersededBy=row.superseded_by,
+        cancelReason=row.cancel_reason,
     )
 
 
 def _row_to_view(row: BookingRow) -> SpotBookingView:
+    replaced = bool(row.cancelled and (row.cancel_reason == "cut_in" or row.superseded_by))
     return SpotBookingView(
         id=row.id,
         spotId=row.spot_id,  # type: ignore[arg-type]
         date=row.date,
         period=row.period,  # type: ignore[arg-type]
-        status="booked",
+        status="cut_in_replaced" if replaced else "booked",
         plateMasked=mask_plate(row.plate),
         vehicleType=row.vehicle_type,  # type: ignore[arg-type]
         vehicleColor=row.color,  # type: ignore[arg-type]
+        supersededBy=row.superseded_by,
     )
 
 
 def _active_rows(db: Session) -> list[BookingRow]:
     return list(db.scalars(select(BookingRow).where(BookingRow.cancelled.is_(False))).all())
+
+
+def _today_list_rows(db: Session, date: str) -> list[BookingRow]:
+    """Active bookings + cut-in-superseded host rows (struck in UI)."""
+    rows = db.scalars(
+        select(BookingRow).where(
+            BookingRow.date == date,
+            or_(
+                BookingRow.cancelled.is_(False),
+                BookingRow.cancel_reason == "cut_in",
+            ),
+        )
+    ).all()
+    return list(rows)
 
 
 def get_reserved_periods(db: Session, spot_id: str, date: str) -> list[TimePeriod]:
@@ -146,15 +172,14 @@ def get_spots(db: Session) -> list[SpotStatus]:
 
 def get_today_bookings(db: Session, date: str | None = None) -> list[SpotBookingView]:
     d = date or today_iso()
-    rows = [
-        r
-        for r in _active_rows(db)
-        if r.date == d
-    ]
+    rows = _today_list_rows(db, d)
     rows.sort(
         key=lambda r: (
             SPOT_IDS.index(r.spot_id) if r.spot_id in SPOT_IDS else 99,
             PERIOD_ORDER.index(r.period) if r.period in PERIOD_ORDER else 99,
+            # Superseded host first, then active cut-in (stable list UX)
+            0 if (r.cancelled and r.cancel_reason == "cut_in") else 1,
+            r.created_at.isoformat() if r.created_at else "",
         )
     )
     return [_row_to_view(r) for r in rows]
@@ -226,3 +251,51 @@ def create_booking(db: Session, body: CreateBookingBody) -> BookResult:
         return BookResult(ok=False, reason="该时段已被预约，请选择其他时段")
     db.refresh(row)
     return BookResult(ok=True, booking=_row_to_booking(row))
+
+
+def create_cut_in(db: Session, body: CutInBookingBody) -> BookResult:
+    """Optimistic ¥5 host cut-in for the current Shanghai period on bay C."""
+    vehicle = normalize_vehicle(body.vehicle)
+    if not vehicle.plate.strip():
+        return BookResult(ok=False, reason="请先填写车牌号")
+
+    today = today_iso()
+    period = current_idle_period()
+
+    host = db.scalar(
+        select(BookingRow).where(
+            BookingRow.cancelled.is_(False),
+            BookingRow.spot_id == BOOKABLE_SPOT,
+            BookingRow.date == today,
+            BookingRow.period == period,
+        )
+    )
+    if host is None:
+        return BookResult(ok=False, reason="当前时段无可插队的车主预约")
+    if not is_host_plate(host.plate):
+        return BookResult(ok=False, reason="超级插队仅可插车主（浙ACU6508 / 浙AY75C1）的队")
+
+    new_id = _uid("bk")
+    row = BookingRow(
+        id=new_id,
+        spot_id=BOOKABLE_SPOT,
+        session_id=body.sessionId,
+        date=today,
+        period=period,
+        plate=vehicle.plate.strip().upper(),
+        color=vehicle.color,
+        vehicle_type=vehicle.type,
+        created_at=datetime.now(timezone.utc),
+        cancelled=False,
+    )
+    host.cancelled = True
+    host.cancel_reason = "cut_in"
+    host.superseded_by = new_id
+    db.add(row)
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        return BookResult(ok=False, reason="插队失败，请稍后重试")
+    db.refresh(row)
+    return BookResult(ok=True, reason="超级插队已登记", booking=_row_to_booking(row))

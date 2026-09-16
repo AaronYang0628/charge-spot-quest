@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion, useDragControls } from 'framer-motion'
-import type { SpotBookingView, TimePeriod, VehicleColor, VehicleInfo, VehicleType } from '../types'
+import type { BookResult, SpotBookingView, TimePeriod, VehicleColor, VehicleInfo, VehicleType } from '../types'
 import {
   DEFAULT_VEHICLE,
   PERIOD_HINTS,
@@ -8,16 +8,19 @@ import {
   SPOT_LABELS,
 } from '../types'
 import { api } from '../api/client'
+import { asset } from '../lib/asset'
 import {
   addDaysISO,
+  currentIdlePeriod,
   formatHugeDate,
   maxBookingISO,
   todayISO,
 } from '../lib/time'
 import { loadPlateHistory, type PlateHistoryEntry } from '../lib/plateHistory'
 import {
-  HOST_CUT_IN_STUB_MESSAGE,
-  isHostPlateMasked,
+  CUT_IN_NEED_PLATE,
+  CUT_IN_QR_CAPTION,
+  isHostCutInAvailable,
 } from '../lib/hostPlates'
 
 const VehicleChooser = lazy(() => import('./VehicleChooser'))
@@ -27,10 +30,13 @@ interface Props {
   initialVehicle: VehicleInfo | null
   onClose: () => void
   onConfirm: (period: TimePeriod, vehicle: VehicleInfo, date: string) => void
+  /** Optimistic cut-in register for current Shanghai period; returns API result. */
+  onCutIn: (vehicle: VehicleInfo) => Promise<BookResult>
   confirming?: boolean
   onExited: () => void
-  /** Today's public bookings (masked) — used for host cut-in stub visibility. */
+  /** Today's public bookings (masked) — used for host cut-in visibility. */
   todayBookings?: SpotBookingView[]
+  onToast?: (message: string) => void
 }
 
 const PERIODS: TimePeriod[] = ['morning', 'noon', 'evening']
@@ -45,9 +51,11 @@ export function BookingDrawer({
   initialVehicle,
   onClose,
   onConfirm,
+  onCutIn,
   confirming,
   onExited,
   todayBookings = [],
+  onToast,
 }: Props) {
   const today = todayISO()
   const maxDate = maxBookingISO(today)
@@ -157,12 +165,12 @@ export function BookingDrawer({
   const hostTakenPeriods =
     date === today
       ? reservedPeriods.filter((p) =>
-          todayBookings.some(
-            (b) => b.spotId === 'C' && b.period === p && isHostPlateMasked(b.plateMasked),
-          ),
+          isHostCutInAvailable({ period: p, todayBookings }),
         )
       : []
-  const showCutIn = hostTakenPeriods.length > 0
+  const currentPeriod = currentIdlePeriod()
+  const showCutIn =
+    date === today && isHostCutInAvailable({ period: currentPeriod, todayBookings })
 
   return (
     <AnimatePresence onExitComplete={onExited}>
@@ -433,7 +441,19 @@ export function BookingDrawer({
                 <button
                   type="button"
                   disabled={confirming}
-                  onClick={() => setCutInOpen(true)}
+                  onClick={() => {
+                    if (!vehicle.plate.trim()) {
+                      onToast?.(CUT_IN_NEED_PLATE)
+                      return
+                    }
+                    setCutInOpen(true)
+                    void onCutIn(vehicle).then((res) => {
+                      if (!res.ok) {
+                        onToast?.(res.reason || '插队失败')
+                        setCutInOpen(false)
+                      }
+                    })
+                  }}
                   className="mt-2 w-full rounded-2xl py-3 text-[14px] font-black"
                   style={{
                     background: 'color-mix(in srgb, var(--ui-warn) 14%, transparent)',
@@ -459,7 +479,7 @@ export function BookingDrawer({
               >
                 <motion.div
                   role="dialog"
-                  aria-label="超级插队"
+                  aria-label="超级插队支付"
                   aria-modal
                   className="w-full max-w-sm rounded-3xl p-5 shadow-2xl"
                   style={{
@@ -475,9 +495,23 @@ export function BookingDrawer({
                   <h3 className="text-lg font-black" style={{ color: 'var(--ui-text)' }}>
                     超级插队5元
                   </h3>
-                  <p className="mt-2 text-sm leading-relaxed" style={{ color: 'var(--ui-muted)' }}>
-                    {HOST_CUT_IN_STUB_MESSAGE}
+                  <p className="mt-1 text-sm font-semibold" style={{ color: 'var(--ui-accent)' }}>
+                    {CUT_IN_QR_CAPTION}
                   </p>
+                  <p className="mt-1 text-[11px]" style={{ color: 'var(--ui-muted)' }}>
+                    车牌 {vehicle.plate} · 已为你抢占当前时段 · 请用支付宝扫码支付
+                  </p>
+                  <div
+                    className="mt-4 overflow-hidden rounded-2xl"
+                    style={{ border: '1px solid var(--ui-border)', background: '#fff' }}
+                  >
+                    <img
+                      src={asset('/pay/alipay-cut-in-5.png')}
+                      alt="支付宝收款码 · 超级插队5元"
+                      className="mx-auto block w-full max-w-[260px]"
+                      draggable={false}
+                    />
+                  </div>
                   <button
                     type="button"
                     onClick={() => setCutInOpen(false)}
@@ -488,7 +522,7 @@ export function BookingDrawer({
                       border: '1px solid var(--ui-border)',
                     }}
                   >
-                    知道了
+                    已支付 / 关闭
                   </button>
                 </motion.div>
               </motion.div>

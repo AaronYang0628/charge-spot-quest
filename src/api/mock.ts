@@ -2,11 +2,12 @@ import type { Booking, SpotBookingView, SpotId, SpotStatus, TimePeriod, VehicleI
 import { BOOKABLE_SPOT, PERIOD_ORDER, SPOT_IDS } from '../types'
 import { uid } from '../lib/id'
 import { maskPlate } from '../lib/plate'
-import { addDaysISO, isBookableDate, todayISO } from '../lib/time'
+import { isHostPlate } from '../lib/hostPlates'
+import { addDaysISO, currentIdlePeriod, isBookableDate, todayISO } from '../lib/time'
 import { normalizeBookings, normalizeVehicle } from '../lib/normalize'
 
 /** Bump when seed/palette shape changes so empty→fresh demo loads. */
-export const MOCK_KEY = 'charge-spot-quest-mock-v3'
+export const MOCK_KEY = 'charge-spot-quest-mock-v4'
 
 function seedBookings(today = todayISO()): Booking[] {
   const demo = 'demo-seed'
@@ -32,7 +33,7 @@ function seedBookings(today = todayISO()): Booking[] {
     // Today — visible in 今日预约 list on first load (keep C free for demo booking)
     mk('A', 0, 'morning', '浙A12348', 'blue', 'convertible', 1),
     mk('B', 0, 'evening', '苏C66552', 'gray', 'convertible', 1),
-    mk('C', 0, 'evening', '沪E77889', 'white', 'pickup', 1),
+    mk('C', 0, 'evening', '浙ACU6508', 'white', 'pickup', 1),
     // Future seeds
     mk('A', 2, 'noon', '沪B88881', 'red', 'pickup', 2),
     mk('B', 3, 'morning', '浙D90003', 'black', 'pickup', 2),
@@ -47,6 +48,13 @@ function read(): Booking[] {
     if (current !== null) {
       const parsed = normalizeBookings(JSON.parse(current))
       return parsed
+    }
+    const v3 = localStorage.getItem('charge-spot-quest-mock-v3')
+    if (v3 !== null) {
+      const migrated = normalizeBookings(JSON.parse(v3))
+      const bookings = migrated.length ? migrated : seedBookings()
+      write(bookings)
+      return bookings
     }
     const v2 = localStorage.getItem('charge-spot-quest-mock-v2')
     if (v2 !== null) {
@@ -159,25 +167,33 @@ export function mockGetTodayBookings(date = todayISO()): SpotBookingView[] {
   const periodRank = (p: TimePeriod) => PERIOD_ORDER.indexOf(p)
   const spotRank = (id: SpotId) => SPOT_IDS.indexOf(id)
   return read()
-    .filter((b) => !b.cancelled && b.date === date)
+    .filter(
+      (b) =>
+        b.date === date &&
+        (!b.cancelled || b.cancelReason === 'cut_in'),
+    )
     .sort(
       (a, b) =>
         spotRank(a.spotId) - spotRank(b.spotId) ||
-        periodRank(a.period) - periodRank(b.period),
+        periodRank(a.period) - periodRank(b.period) ||
+        (a.cancelled && a.cancelReason === 'cut_in' ? 0 : 1) -
+          (b.cancelled && b.cancelReason === 'cut_in' ? 0 : 1),
     )
     .map(toView)
 }
 
 function toView(b: Booking): SpotBookingView {
+  const replaced = Boolean(b.cancelled && (b.cancelReason === 'cut_in' || b.supersededBy))
   return {
     id: b.id,
     spotId: b.spotId,
     date: b.date,
     period: b.period,
-    status: 'booked',
+    status: replaced ? 'cut_in_replaced' : 'booked',
     plateMasked: maskPlate(b.vehicle.plate),
     vehicleType: b.vehicle.type,
     vehicleColor: b.vehicle.color,
+    supersededBy: b.supersededBy,
   }
 }
 
@@ -213,6 +229,50 @@ export function mockCreateBooking(input: {
   // Single-tab mock only; real multi-client concurrency requires a server.
   write([...bookings, booking])
   return { ok: true, booking }
+}
+
+
+export function mockCutInBooking(input: {
+  sessionId: string
+  vehicle: VehicleInfo
+}) {
+  const bookings = read()
+  const vehicle = normalizeVehicle(input.vehicle)
+  if (!vehicle.plate.trim()) {
+    return { ok: false, reason: '请先填写车牌号' }
+  }
+  const today = todayISO()
+  const period = currentIdlePeriod()
+  const host = bookings.find(
+    (b) =>
+      !b.cancelled &&
+      b.spotId === BOOKABLE_SPOT &&
+      b.date === today &&
+      b.period === period,
+  )
+  if (!host) {
+    return { ok: false, reason: '当前时段无可插队的车主预约' }
+  }
+  if (!isHostPlate(host.vehicle.plate)) {
+    return { ok: false, reason: '超级插队仅可插车主（浙ACU6508 / 浙AY75C1）的队' }
+  }
+  const booking: Booking = {
+    id: uid('bk'),
+    sessionId: input.sessionId,
+    spotId: BOOKABLE_SPOT,
+    date: today,
+    period,
+    vehicle,
+    createdAt: new Date().toISOString(),
+    cancelled: false,
+  }
+  const next = bookings.map((b) =>
+    b.id === host.id
+      ? { ...b, cancelled: true, cancelReason: 'cut_in', supersededBy: booking.id }
+      : b,
+  )
+  write([...next, booking])
+  return { ok: true, reason: '超级插队已登记', booking }
 }
 
 export function mockReset() {

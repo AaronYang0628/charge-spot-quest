@@ -10,6 +10,7 @@ SpotId = Literal["A", "B", "C"]
 TimePeriod = Literal["morning", "noon", "evening"]
 VehicleType = Literal["convertible", "pickup", "ambulance", "police", "taxi", "sedan", "compact", "citycar", "muscle", "van"]
 VehicleColor = Literal["black", "white", "gray", "red", "blue"]
+BookingStatus = Literal["booked", "cut_in_replaced"]
 
 
 class VehicleInfo(BaseModel):
@@ -42,6 +43,8 @@ class Booking(BaseModel):
     vehicle: VehicleInfo
     createdAt: str
     cancelled: bool
+    supersededBy: str | None = None
+    cancelReason: str | None = None
 
 
 class SpotBookingView(BaseModel):
@@ -49,16 +52,22 @@ class SpotBookingView(BaseModel):
     spotId: SpotId
     date: str
     period: TimePeriod
-    status: Literal["booked"] = "booked"
+    status: BookingStatus = "booked"
     plateMasked: str
     vehicleType: VehicleType
     vehicleColor: VehicleColor
+    supersededBy: str | None = None
 
 
 class CreateBookingBody(BaseModel):
     sessionId: str = Field(min_length=1, max_length=128)
     date: str  # YYYY-MM-DD
     period: TimePeriod
+    vehicle: VehicleInfo
+
+
+class CutInBookingBody(BaseModel):
+    sessionId: str = Field(min_length=1, max_length=128)
     vehicle: VehicleInfo
 
 

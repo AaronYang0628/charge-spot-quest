@@ -54,46 +54,73 @@ export function TodayBookingsList({ rows, loading }: Props) {
         </div>
       ) : (
         <ul className="space-y-1.5">
-          {rows.map((row) => (
-            <li
-              key={row.id}
-              className="flex items-center justify-between gap-2 rounded-xl px-3 py-2.5"
-              style={{
-                background: 'var(--ui-tile, #f4f4f5)',
-                border: '1px solid var(--ui-border)',
-              }}
-            >
-              <div className="min-w-0">
-                <p className="text-[13px] font-black" style={{ color: 'var(--ui-text)' }}>
-                  {SPOT_LABELS[row.spotId]}
-                  <span
-                    className="ml-2 inline-block rounded px-1.5 py-0.5 text-[10px] font-bold"
-                    style={{ background: 'var(--ui-accent)', color: '#fff' }}
+          {rows.map((row) => {
+            const replaced = row.status === 'cut_in_replaced'
+            return (
+              <li
+                key={row.id}
+                className="flex items-center justify-between gap-2 rounded-xl px-3 py-2.5"
+                style={{
+                  background: 'var(--ui-tile, #f4f4f5)',
+                  border: '1px solid var(--ui-border)',
+                  opacity: replaced ? 0.72 : 1,
+                }}
+              >
+                <div className="min-w-0">
+                  <p
+                    className={`text-[13px] font-black ${replaced ? 'line-through' : ''}`}
+                    style={{ color: replaced ? 'var(--ui-muted)' : 'var(--ui-text)' }}
                   >
-                    {PERIOD_LABELS[row.period]}
-                  </span>
-                </p>
-                <p className="mt-0.5 truncate text-[11px]" style={{ color: 'var(--ui-muted)' }}>
-                  {VEHICLE_COLOR_LABELS[row.vehicleColor]}
-                  {VEHICLE_TYPE_LABELS[row.vehicleType]}
-                </p>
-              </div>
-              <div className="shrink-0 text-right">
-                <span
-                  className="inline-block rounded-full px-2 py-0.5 text-[10px] font-bold"
-                  style={{ background: 'var(--ui-success)', color: '#fff' }}
-                >
-                  已登记
-                </span>
-                <p
-                  className="mt-1 font-mono text-[12px] font-bold tracking-wide"
-                  style={{ color: 'var(--ui-text)' }}
-                >
-                  {row.plateMasked}
-                </p>
-              </div>
-            </li>
-          ))}
+                    {SPOT_LABELS[row.spotId]}
+                    <span
+                      className="ml-2 inline-block rounded px-1.5 py-0.5 text-[10px] font-bold"
+                      style={{
+                        background: replaced ? 'var(--ui-muted)' : 'var(--ui-accent)',
+                        color: '#fff',
+                        textDecoration: 'none',
+                      }}
+                    >
+                      {PERIOD_LABELS[row.period]}
+                    </span>
+                  </p>
+                  <p
+                    className={`mt-0.5 truncate text-[11px] ${replaced ? 'line-through' : ''}`}
+                    style={{ color: 'var(--ui-muted)' }}
+                  >
+                    {VEHICLE_COLOR_LABELS[row.vehicleColor]}
+                    {VEHICLE_TYPE_LABELS[row.vehicleType]}
+                  </p>
+                </div>
+                <div className="shrink-0 text-right">
+                  {replaced ? (
+                    <span
+                      className="inline-block rounded-full px-2 py-0.5 text-[10px] font-bold"
+                      style={{
+                        background: 'color-mix(in srgb, var(--ui-warn) 18%, transparent)',
+                        color: 'var(--ui-warn)',
+                        border: '1px solid color-mix(in srgb, var(--ui-warn) 40%, transparent)',
+                      }}
+                    >
+                      已被插队
+                    </span>
+                  ) : (
+                    <span
+                      className="inline-block rounded-full px-2 py-0.5 text-[10px] font-bold"
+                      style={{ background: 'var(--ui-success)', color: '#fff' }}
+                    >
+                      已登记
+                    </span>
+                  )}
+                  <p
+                    className={`mt-1 font-mono text-[12px] font-bold tracking-wide ${replaced ? 'line-through' : ''}`}
+                    style={{ color: replaced ? 'var(--ui-muted)' : 'var(--ui-text)' }}
+                  >
+                    {row.plateMasked}
+                  </p>
+                </div>
+              </li>
+            )
+          })}
         </ul>
       )}
     </section>

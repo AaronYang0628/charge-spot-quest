@@ -87,6 +87,40 @@ export function useAppState() {
     } finally { if (request === generation.current) setConfirming(false) }
   }
 
+  const cutIn = async (vehicle: VehicleInfo): Promise<BookResult> => {
+    if (busy.current) return { ok: false, reason: '请稍候' }
+    busy.current = true
+    setConfirming(true)
+    const request = generation.current
+    try {
+      const res = await api.cutInBooking({ sessionId: state.sessionId, vehicle })
+      if (request !== generation.current) return res
+      if (!res.ok || !res.booking) {
+        setResult({ ok: false, reason: res.reason || '插队失败，请重试' })
+        await refresh()
+        return res
+      }
+      try { saveVehicle(vehicle) } catch { /* ok */ }
+      try { recordPlateHistory(vehicle) } catch { /* ok */ }
+      setState(s => ({ ...s, vehicle, bookings: [...s.bookings, res.booking!] }))
+      void refresh().catch(() => {})
+      return res
+    } catch {
+      const fail = { ok: false, reason: '提交失败，请检查网络后重试' }
+      if (request === generation.current) setResult(fail)
+      return fail
+    } finally {
+      if (request === generation.current) {
+        setConfirming(false)
+        busy.current = false
+      }
+    }
+  }
+
+  const showToast = (ok: boolean, reason: string) => {
+    setResult({ ok, reason })
+  }
+
   const finish = useCallback(() => {
     if (!pending) return
     setResult({ ok: true, booking: pending, reason: '预约成功，请按预约时段到场' })
@@ -115,6 +149,8 @@ export function useAppState() {
     animVehicle: pending?.vehicle ?? parked?.vehicle ?? null,
     openDrawer, closeDrawer: () => { if (!busy.current) setDrawerOpen(false) },
     confirm,
+    cutIn,
+    showToast,
     onDrawerExited: () => { if (animPhase === 'closing') setAnimPhase('parking') },
     onParked: () => setAnimPhase(p => p === 'parking' ? 'charging' : p),
     onFinished: finish, dismissResult: () => setResult(null), resetAll,

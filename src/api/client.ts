@@ -9,6 +9,7 @@ import type {
 } from '../types'
 import {
   mockCreateBooking,
+  mockCutInBooking,
   mockGetBookings,
   mockGetReservedPeriods,
   mockGetSpotBookings,
@@ -100,6 +101,20 @@ export const api = {
     }
     await delay(220)
     return mockCreateBooking(input)
+  },
+
+  async cutInBooking(input: {
+    sessionId: string
+    vehicle: VehicleInfo
+  }): Promise<BookResult> {
+    if (USE_API) {
+      return apiFetch<BookResult>('/api/bookings/cut-in', {
+        method: 'POST',
+        body: JSON.stringify(input),
+      })
+    }
+    await delay(180)
+    return mockCutInBooking(input)
   },
 
   async resetDemo(): Promise<void> {

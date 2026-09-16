@@ -38,13 +38,14 @@ COLOR_CN = {
 SPOT_LABELS = {"A": "647", "B": "648", "C": "649"}
 
 
-def format_booking_text(booking: Booking) -> str:
+def format_booking_text(booking: Booking, *, kind: str = "booking") -> str:
     spot = SPOT_LABELS.get(booking.spotId, booking.spotId)
     period = PERIOD_CN.get(booking.period, booking.period)
     vtype = TYPE_CN.get(booking.vehicle.type, booking.vehicle.type)
     color = COLOR_CN.get(booking.vehicle.color, booking.vehicle.color)
+    title = "【邻里充电】超级插队" if kind == "cut_in" else "【邻里充电】新预约"
     return (
-        "【邻里充电】新预约\n"
+        f"{title}\n"
         f"车位:{spot}\n"
         f"日期:{booking.date}\n"
         f"时段:{period}\n"
@@ -72,6 +73,7 @@ def notify_booking(
     booking: Booking,
     *,
     sec_secret: str | None = None,
+    kind: str = "booking",
 ) -> None:
     """POST text message to DingTalk custom robot. Never raises to caller.
 
@@ -85,7 +87,7 @@ def notify_booking(
     if not secret:
         logger.warning("DingTalk notify skipped: DINGTALK_SEC_SECRET not set")
         return
-    payload = {"msgtype": "text", "text": {"content": format_booking_text(booking)}}
+    payload = {"msgtype": "text", "text": {"content": format_booking_text(booking, kind=kind)}}
     try:
         signed = signed_webhook_url(url, secret)
         with httpx.Client(timeout=5.0) as client:
