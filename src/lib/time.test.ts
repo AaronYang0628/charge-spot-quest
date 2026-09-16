@@ -1,22 +1,28 @@
 import { describe, expect, it } from 'vitest'
-import { currentIdlePeriod } from './time'
+import { currentIdlePeriodFromHour, shanghaiHour, todayISO } from './time'
 
-function atHour(hour: number, minute = 0) {
-  return new Date(2026, 8, 15, hour, minute, 0, 0)
-}
-
-describe('currentIdlePeriod', () => {
-  it('highlights 今早 before 08 and through morning until 12', () => {
-    expect(currentIdlePeriod(atHour(0))).toBe('evening')
-    expect(currentIdlePeriod(atHour(7, 59))).toBe('evening')
-    expect(currentIdlePeriod(atHour(8))).toBe('morning')
-    expect(currentIdlePeriod(atHour(11, 59))).toBe('morning')
+describe('currentIdlePeriodFromHour (Asia/Shanghai rules)', () => {
+  it('highlights 今晚 before 08, 今早 08–12', () => {
+    expect(currentIdlePeriodFromHour(0)).toBe('evening')
+    expect(currentIdlePeriodFromHour(7)).toBe('evening')
+    expect(currentIdlePeriodFromHour(8)).toBe('morning')
+    expect(currentIdlePeriodFromHour(11)).toBe('morning')
   })
 
   it('switches to 中午 at 12 and 今晚 at 18', () => {
-    expect(currentIdlePeriod(atHour(12))).toBe('noon')
-    expect(currentIdlePeriod(atHour(17, 59))).toBe('noon')
-    expect(currentIdlePeriod(atHour(18))).toBe('evening')
-    expect(currentIdlePeriod(atHour(23, 59))).toBe('evening')
+    expect(currentIdlePeriodFromHour(12)).toBe('noon')
+    expect(currentIdlePeriodFromHour(13)).toBe('noon')
+    expect(currentIdlePeriodFromHour(17)).toBe('noon')
+    expect(currentIdlePeriodFromHour(18)).toBe('evening')
+    expect(currentIdlePeriodFromHour(23)).toBe('evening')
+  })
+})
+
+describe('shanghai wall clock', () => {
+  it('maps a known UTC instant to Shanghai hour/date', () => {
+    // 2026-09-16 05:50 UTC == 13:50 Asia/Shanghai
+    const d = new Date('2026-09-16T05:50:00Z')
+    expect(shanghaiHour(d)).toBe(13)
+    expect(todayISO(d)).toBe('2026-09-16')
   })
 })
