@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion, useDragControls } from 'framer-motion'
-import type { TimePeriod, VehicleColor, VehicleInfo, VehicleType } from '../types'
+import type { SpotBookingView, TimePeriod, VehicleColor, VehicleInfo, VehicleType } from '../types'
 import {
   DEFAULT_VEHICLE,
   PERIOD_HINTS,
@@ -14,6 +14,11 @@ import {
   maxBookingISO,
   todayISO,
 } from '../lib/time'
+import { loadPlateHistory, type PlateHistoryEntry } from '../lib/plateHistory'
+import {
+  HOST_CUT_IN_STUB_MESSAGE,
+  isHostPlateMasked,
+} from '../lib/hostPlates'
 
 const VehicleChooser = lazy(() => import('./VehicleChooser'))
 
@@ -24,6 +29,8 @@ interface Props {
   onConfirm: (period: TimePeriod, vehicle: VehicleInfo, date: string) => void
   confirming?: boolean
   onExited: () => void
+  /** Today's public bookings (masked) — used for host cut-in stub visibility. */
+  todayBookings?: SpotBookingView[]
 }
 
 const PERIODS: TimePeriod[] = ['morning', 'noon', 'evening']
@@ -40,6 +47,7 @@ export function BookingDrawer({
   onConfirm,
   confirming,
   onExited,
+  todayBookings = [],
 }: Props) {
   const today = todayISO()
   const maxDate = maxBookingISO(today)
@@ -50,6 +58,8 @@ export function BookingDrawer({
   const [plate, setPlate] = useState('')
   const [color, setColor] = useState<VehicleColor>(DEFAULT_VEHICLE.color)
   const [type, setType] = useState<VehicleType>(DEFAULT_VEHICLE.type)
+  const [plateHistory, setPlateHistory] = useState<PlateHistoryEntry[]>([])
+  const [cutInOpen, setCutInOpen] = useState(false)
   const sheet = useRef<HTMLDivElement>(null)
   const dragControls = useDragControls()
   const openGen = useRef(0)
@@ -65,7 +75,13 @@ export function BookingDrawer({
       100,
     )
     const key = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && !confirming) onClose()
+      if (e.key === 'Escape' && !confirming) {
+        if (cutInOpen) {
+          setCutInOpen(false)
+          return
+        }
+        onClose()
+      }
       if (e.key !== 'Tab') return
       const items = [...(sheet.current?.querySelectorAll<HTMLElement>('button:not(:disabled),input') ?? [])]
       const first = items[0], last = items[items.length - 1]
@@ -79,7 +95,7 @@ export function BookingDrawer({
       document.removeEventListener('keydown', key)
       previous?.focus()
     }
-  }, [open, confirming, onClose])
+  }, [open, confirming, onClose, cutInOpen])
 
   // Reset form only when the drawer opens — not on every reservedPeriods refresh.
   useEffect(() => {
@@ -91,6 +107,12 @@ export function BookingDrawer({
     setColor(v?.color ?? DEFAULT_VEHICLE.color)
     setType(v?.type ?? DEFAULT_VEHICLE.type)
     setPeriod(null)
+    setCutInOpen(false)
+    try {
+      setPlateHistory(loadPlateHistory())
+    } catch {
+      setPlateHistory([])
+    }
     openGen.current += 1
   }, [open, initialVehicle])
 
@@ -125,6 +147,22 @@ export function BookingDrawer({
   const canPrev = date > today
   const canNext = date < maxDate
   const periodReady = period !== null && !reservedPeriods.includes(period)
+
+  const applyHistory = (entry: PlateHistoryEntry) => {
+    setPlate(entry.plate)
+    setColor(entry.color)
+    setType(entry.type)
+  }
+
+  const hostTakenPeriods =
+    date === today
+      ? reservedPeriods.filter((p) =>
+          todayBookings.some(
+            (b) => b.spotId === 'C' && b.period === p && isHostPlateMasked(b.plateMasked),
+          ),
+        )
+      : []
+  const showCutIn = hostTakenPeriods.length > 0
 
   return (
     <AnimatePresence onExitComplete={onExited}>
@@ -271,13 +309,14 @@ export function BookingDrawer({
                 {PERIODS.map((p) => {
                   const taken = reservedPeriods.includes(p)
                   const on = period === p
+                  const hostTaken = hostTakenPeriods.includes(p)
                   return (
                     <button
                       key={`${date}-${p}`}
                       type="button"
                       role="radio"
                       aria-checked={on}
-                      aria-label={`${PERIOD_LABELS[p]} ${taken ? '已预约' : PERIOD_HINTS[p]}`}
+                      aria-label={`${PERIOD_LABELS[p]} ${taken ? (hostTaken ? '车主占用' : '已预约') : PERIOD_HINTS[p]}`}
                       disabled={taken || confirming || loadingSlots}
                       onPointerDown={(e) => {
                         // Prevent parent drag / scroll from swallowing the tap.
@@ -306,14 +345,14 @@ export function BookingDrawer({
                     >
                       <div className="text-2xl font-black">{PERIOD_LABELS[p]}</div>
                       <div className="text-[10px] font-medium opacity-80">
-                        {taken ? '已预约' : PERIOD_HINTS[p]}
+                        {taken ? (hostTaken ? '车主占用' : '已预约') : PERIOD_HINTS[p]}
                       </div>
                     </button>
                   )
                 })}
               </div>
 
-              <label className="mb-3 block">
+              <label className="mb-1 block">
                 <span
                   className="mb-1 block text-[11px] font-bold"
                   style={{ color: 'var(--ui-muted)' }}
@@ -334,6 +373,44 @@ export function BookingDrawer({
                 />
               </label>
 
+              <div className="mb-4 mt-2" aria-label="历史车牌">
+                {plateHistory.length === 0 ? (
+                  <p className="text-[11px]" style={{ color: 'var(--ui-muted)' }}>
+                    暂无历史车牌
+                  </p>
+                ) : (
+                  <div className="flex flex-wrap gap-1.5">
+                    {plateHistory.map((entry) => {
+                      const active = plate.trim().toUpperCase() === entry.plate
+                      return (
+                        <button
+                          key={entry.plate}
+                          type="button"
+                          disabled={confirming}
+                          onClick={() => applyHistory(entry)}
+                          className="rounded-full px-2.5 py-1 font-mono text-[11px] font-bold transition"
+                          style={
+                            active
+                              ? {
+                                  background: 'color-mix(in srgb, var(--ui-accent) 18%, transparent)',
+                                  color: 'var(--ui-accent)',
+                                  border: '1px solid color-mix(in srgb, var(--ui-accent) 45%, transparent)',
+                                }
+                              : {
+                                  background: 'var(--ui-tile, #f4f4f5)',
+                                  color: 'var(--ui-text)',
+                                  border: '1px solid var(--ui-border)',
+                                }
+                          }
+                        >
+                          {entry.plate}
+                        </button>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+
               <button
                 type="button"
                 disabled={confirming || !periodReady}
@@ -351,8 +428,72 @@ export function BookingDrawer({
               >
                 {confirming ? '提交中…' : periodReady ? '确认预约' : '请选择可用时段'}
               </button>
+
+              {showCutIn && (
+                <button
+                  type="button"
+                  disabled={confirming}
+                  onClick={() => setCutInOpen(true)}
+                  className="mt-2 w-full rounded-2xl py-3 text-[14px] font-black"
+                  style={{
+                    background: 'color-mix(in srgb, var(--ui-warn) 14%, transparent)',
+                    color: 'var(--ui-warn)',
+                    border: '1px solid color-mix(in srgb, var(--ui-warn) 45%, transparent)',
+                  }}
+                >
+                  超级插队5元
+                </button>
+              )}
             </div>
           </motion.div>
+
+          <AnimatePresence>
+            {cutInOpen && (
+              <motion.div
+                className="fixed inset-0 z-[70] flex items-end justify-center bg-black/45 px-3 pb-6 sm:items-center"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.18 }}
+                onClick={() => setCutInOpen(false)}
+              >
+                <motion.div
+                  role="dialog"
+                  aria-label="超级插队"
+                  aria-modal
+                  className="w-full max-w-sm rounded-3xl p-5 shadow-2xl"
+                  style={{
+                    background: 'var(--ui-shell-top, #ffffff)',
+                    border: '1px solid var(--ui-border)',
+                  }}
+                  initial={{ y: 24, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  exit={{ y: 16, opacity: 0 }}
+                  transition={{ duration: 0.18, ease: 'easeOut' }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <h3 className="text-lg font-black" style={{ color: 'var(--ui-text)' }}>
+                    超级插队5元
+                  </h3>
+                  <p className="mt-2 text-sm leading-relaxed" style={{ color: 'var(--ui-muted)' }}>
+                    {HOST_CUT_IN_STUB_MESSAGE}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setCutInOpen(false)}
+                    className="mt-4 w-full rounded-2xl py-2.5 text-sm font-bold"
+                    style={{
+                      background: 'var(--ui-tile, #f4f4f5)',
+                      color: 'var(--ui-text)',
+                      border: '1px solid var(--ui-border)',
+                    }}
+                  >
+                    知道了
+                  </button>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </>
       )}
     </AnimatePresence>

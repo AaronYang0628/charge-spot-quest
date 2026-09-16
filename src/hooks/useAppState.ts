@@ -3,6 +3,7 @@ import { api } from '../api/client'
 import type { Booking, BookResult, SpotBookingView, SpotStatus, TimePeriod, VehicleInfo } from '../types'
 import { BOOKABLE_SPOT, SPOT_LABELS } from '../types'
 import { clearAllData, loadState, saveState, saveVehicle } from '../lib/storage'
+import { recordPlateHistory } from '../lib/plateHistory'
 import { todayISO } from '../lib/time'
 
 export type AnimPhase = 'closing' | 'parking' | 'charging' | null
@@ -72,6 +73,7 @@ export function useAppState() {
       }
       const booking = res.booking
       try { saveVehicle(vehicle) } catch { /* Booking already succeeded. */ }
+      try { recordPlateHistory(vehicle) } catch { /* History is best-effort. */ }
       setState(s => ({ ...s, vehicle, bookings: [...s.bookings, booking] }))
       setPending(booking)
       setAnimPhase('closing')

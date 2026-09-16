@@ -1,11 +1,14 @@
+import { useMemo, useState } from 'react'
+import { AnimatePresence, motion } from 'framer-motion'
 import { useAppState } from './hooks/useAppState'
 import { ParkingLot } from './components/ParkingLot'
 import { SpotBars } from './components/SpotBars'
 import { BookingDrawer } from './components/BookingDrawer'
 import { TodayBookingsList } from './components/TodayBookingsList'
 import { ResultToast } from './components/ResultToast'
-import { SPOT_LABELS } from './types'
+import { BOOKABLE_SPOT, SPOT_LABELS } from './types'
 import { formatHugeDate } from './lib/time'
+import { HOST_CUT_IN_STUB_MESSAGE, isHostCutInAvailable } from './lib/hostPlates'
 
 export default function App() {
   const {
@@ -25,7 +28,13 @@ export default function App() {
     resetAll, onDrawerExited, onParked, onFinished,
   } = useAppState()
 
+  const [cutInOpen, setCutInOpen] = useState(false)
   const huge = formatHugeDate()
+  const spotC = useMemo(() => spots.find((s) => s.id === BOOKABLE_SPOT), [spots])
+  const hostCutIn = isHostCutInAvailable({
+    spot: spotC,
+    todayBookings,
+  })
 
   return (
     <div className="app-shell flex flex-col">
@@ -64,7 +73,12 @@ export default function App() {
 
         <div className="grid grid-cols-3 gap-2">
           {spots.map((s) => (
-            <SpotBars key={s.id} spot={s} />
+            <SpotBars
+              key={s.id}
+              spot={s}
+              showCutIn={s.id === BOOKABLE_SPOT && hostCutIn}
+              onCutIn={() => setCutInOpen(true)}
+            />
           ))}
         </div>
 
@@ -95,6 +109,7 @@ export default function App() {
         onConfirm={(period, vehicle, date) => void confirm(period, vehicle, date)}
         confirming={confirming}
         onExited={onDrawerExited}
+        todayBookings={todayBookings}
       />
 
       <ResultToast
@@ -107,6 +122,54 @@ export default function App() {
         }
         onClose={dismissResult}
       />
+
+      <AnimatePresence>
+        {cutInOpen && (
+          <motion.div
+            className="fixed inset-0 z-[70] flex items-end justify-center bg-black/45 px-3 pb-6 sm:items-center"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.18 }}
+            onClick={() => setCutInOpen(false)}
+          >
+            <motion.div
+              role="dialog"
+              aria-label="超级插队"
+              aria-modal
+              className="w-full max-w-sm rounded-3xl p-5 shadow-2xl"
+              style={{
+                background: 'var(--ui-shell-top, #ffffff)',
+                border: '1px solid var(--ui-border)',
+              }}
+              initial={{ y: 24, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 16, opacity: 0 }}
+              transition={{ duration: 0.18, ease: 'easeOut' }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 className="text-lg font-black" style={{ color: 'var(--ui-text)' }}>
+                超级插队5元
+              </h3>
+              <p className="mt-2 text-sm leading-relaxed" style={{ color: 'var(--ui-muted)' }}>
+                {HOST_CUT_IN_STUB_MESSAGE}
+              </p>
+              <button
+                type="button"
+                onClick={() => setCutInOpen(false)}
+                className="mt-4 w-full rounded-2xl py-2.5 text-sm font-bold"
+                style={{
+                  background: 'var(--ui-tile, #f4f4f5)',
+                  color: 'var(--ui-text)',
+                  border: '1px solid var(--ui-border)',
+                }}
+              >
+                知道了
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

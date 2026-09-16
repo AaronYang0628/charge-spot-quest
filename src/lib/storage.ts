@@ -46,6 +46,8 @@ export function clearAllData(): void {
   localStorage.removeItem(VEHICLE_KEY)
   localStorage.removeItem('charge-spot-quest-mock-v1')
   localStorage.removeItem('charge-spot-quest-mock-v2')
+  localStorage.removeItem('charge-spot-quest-mock-v3')
+  localStorage.removeItem('charge-spot-quest-plate-history-v1')
 }
 
 export function loadVehicle(): VehicleInfo | null {
