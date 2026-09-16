@@ -121,16 +121,19 @@ describe('reservation mock', () => {
   })
 
 
-  it('derives per-period idle from today occupancy (booked → low)', () => {
+  it('derives per-period idle from today occupancy (booked → 0%, free → 100%)', () => {
     const spots = mockGetSpots()
     const c = spots.find((s) => s.id === 'C')!
-    // Seed has today's evening on C → evening idle low; morning/noon free → high
-    expect(c.idleEvening).toBeLessThan(0.2)
-    expect(c.idleMorning).toBeGreaterThan(0.5)
-    expect(c.idleNoon).toBeGreaterThan(0.5)
+    // Seed has today's evening on C → evening idle 0; morning/noon free → 100%
+    expect(c.idleEvening).toBe(0)
+    expect(c.idleMorning).toBe(1)
+    expect(c.idleNoon).toBe(1)
     expect(c.idleTonight).toBe(c.idleEvening)
-    expect(spots[0].idleMorning).toBeDefined()
-    expect(spots[1].idleNoon).toBeDefined()
+    // A seed morning → 0; B seed evening → 0
+    expect(spots[0].idleMorning).toBe(0)
+    expect(spots[0].idleNoon).toBe(1)
+    expect(spots[1].idleEvening).toBe(0)
+    expect(spots[1].idleNoon).toBe(1)
   })
 
   it('only exposes black/white/gray/red/blue as vehicle colors', () => {

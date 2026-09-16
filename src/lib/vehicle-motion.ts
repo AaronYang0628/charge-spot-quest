@@ -23,5 +23,7 @@ export function createWheelRig(model: Object3D) {
 export function entrancePosition(t: number) {
   const clamped = Math.max(0, Math.min(1, t))
   // Smooth arrival: enough time in motion to read the silhouette before stopping.
-  return -7 * (1 - clamped) ** 2
+  // Avoid IEEE -0 at t>=1 so callers comparing with === 0 stay stable.
+  const z = -7 * (1 - clamped) ** 2
+  return z === 0 ? 0 : z
 }

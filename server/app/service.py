@@ -83,19 +83,26 @@ def get_reserved_periods(db: Session, spot_id: str, date: str) -> list[TimePerio
     return [r.period for r in rows]  # type: ignore[misc]
 
 
-def _idle_from_occupancy(reserved: list[str], period: str, free_idle: float, booked_idle: float = 0.08) -> float:
-    return booked_idle if period in reserved else free_idle
+def _idle_for_period(reserved: list[str], period: str) -> float:
+    """Booked period → 0% idle; free period → 100% idle."""
+    return 0.0 if period in reserved else 1.0
 
 
 def get_spots(db: Session) -> list[SpotStatus]:
     today = today_iso()
+    reserved_a = get_reserved_periods(db, "A", today)
+    reserved_b = get_reserved_periods(db, "B", today)
     reserved_c = get_reserved_periods(db, BOOKABLE_SPOT, today)
 
-    a_morning, a_noon, a_evening = 0.18, 0.28, 0.35
-    b_morning, b_noon, b_evening = 0.1, 0.16, 0.22
-    c_morning = _idle_from_occupancy(reserved_c, "morning", 0.82)
-    c_noon = _idle_from_occupancy(reserved_c, "noon", 0.71)
-    c_evening = _idle_from_occupancy(reserved_c, "evening", 0.64)
+    a_morning = _idle_for_period(reserved_a, "morning")
+    a_noon = _idle_for_period(reserved_a, "noon")
+    a_evening = _idle_for_period(reserved_a, "evening")
+    b_morning = _idle_for_period(reserved_b, "morning")
+    b_noon = _idle_for_period(reserved_b, "noon")
+    b_evening = _idle_for_period(reserved_b, "evening")
+    c_morning = _idle_for_period(reserved_c, "morning")
+    c_noon = _idle_for_period(reserved_c, "noon")
+    c_evening = _idle_for_period(reserved_c, "evening")
 
     return [
         SpotStatus(
@@ -103,29 +110,31 @@ def get_spots(db: Session) -> list[SpotStatus]:
             maintenance=True,
             bookable=False,
             occupied=False,
-            idleIn1h=0.12,
+            idleIn1h=a_morning,
             idleTonight=a_evening,
             idleMorning=a_morning,
             idleNoon=a_noon,
             idleEvening=a_evening,
+            reservedPeriods=reserved_a,
         ),
         SpotStatus(
             id="B",
             maintenance=True,
             bookable=False,
             occupied=False,
-            idleIn1h=0.08,
+            idleIn1h=b_morning,
             idleTonight=b_evening,
             idleMorning=b_morning,
             idleNoon=b_noon,
             idleEvening=b_evening,
+            reservedPeriods=reserved_b,
         ),
         SpotStatus(
             id="C",
             maintenance=False,
             bookable=len(reserved_c) < 3,
             occupied=False,
-            idleIn1h=0.78,
+            idleIn1h=c_morning,
             idleTonight=c_evening,
             idleMorning=c_morning,
             idleNoon=c_noon,

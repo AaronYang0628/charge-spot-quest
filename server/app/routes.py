@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from app.db import get_db
 from app.schemas import BookResult, Booking, CreateBookingBody, HealthResponse, SpotBookingView, SpotStatus, TimePeriod
 from app import service
+from app.dingtalk import notify_booking
 from app.seed import reset_and_seed
 
 health_router = APIRouter(tags=["health"])
@@ -66,8 +67,16 @@ def my_bookings(
 
 
 @api_router.post("/bookings", response_model=BookResult)
-def create_booking(body: CreateBookingBody, db: Session = Depends(get_db)) -> BookResult:
-    return service.create_booking(db, body)
+def create_booking(request: Request, body: CreateBookingBody, db: Session = Depends(get_db)) -> BookResult:
+    result = service.create_booking(db, body)
+    if result.ok and result.booking is not None:
+        settings = request.app.state.settings
+        notify_booking(
+            getattr(settings, "dingtalk_webhook_url", None),
+            result.booking,
+            sec_secret=getattr(settings, "dingtalk_sec_secret", None),
+        )
+    return result
 
 
 @api_router.post("/demo/reset")

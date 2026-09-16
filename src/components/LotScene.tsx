@@ -14,6 +14,8 @@ import { createWheelRig } from '../lib/vehicle-motion'
 export interface LotSceneProps {
   vehicle: VehicleInfo | null; phase: AnimPhase; paused: boolean; reduced: boolean
   reserved: boolean
+  /** When false, OrbitControls disabled so page can scroll. */
+  orbitEnabled?: boolean
   onSelect: () => void; onParked: () => void; onFinished: () => void
 }
 const TARGET = new Vector3(0, 0, -2.1)
@@ -53,7 +55,7 @@ function Charger() {
     <mesh position={[.5,.95,0]} rotation={[0,0,0]} castShadow><torusGeometry args={[.38,.045,6,16,Math.PI*1.7]} /><meshStandardMaterial color="#273342" /></mesh>
   </group>
 }
-function CameraRig({ paused }: Pick<LotSceneProps, 'paused'>) {
+function CameraRig({ paused, orbitEnabled }: Pick<LotSceneProps, 'paused' | 'orbitEnabled'>) {
   const control = useRef<Controls>(null)
   const { camera, size, invalidate, scene, gl } = useThree()
   useEffect(() => {
@@ -66,7 +68,8 @@ function CameraRig({ paused }: Pick<LotSceneProps, 'paused'>) {
     c.position.copy(CAMERA); c.zoom = base; c.lookAt(TARGET); c.updateProjectionMatrix()
     control.current?.target.copy(TARGET); control.current?.update(); invalidate()
   }, [camera, base, invalidate])
-  return <OrbitControls ref={control} target={TARGET} enabled={!paused}
+  const enabled = !!orbitEnabled && !paused
+  return <OrbitControls ref={control} target={TARGET} enabled={enabled}
     enablePan={false} enableDamping={false} minAzimuthAngle={AZIMUTH - Math.PI*25/180}
     maxAzimuthAngle={AZIMUTH + Math.PI*25/180} minPolarAngle={Math.PI/6}
     maxPolarAngle={Math.PI*55/180} minZoom={base*.85} maxZoom={base*1.25} />
@@ -126,7 +129,7 @@ export default function LotScene(props: LotSceneProps) {
     <directionalLight position={[-8,14,8]} intensity={3.2} castShadow
       shadow-mapSize={[1024,1024]} shadow-camera-left={-13} shadow-camera-right={13}
       shadow-camera-top={13} shadow-camera-bottom={-13} shadow-normalBias={.03} shadow-bias={-.0001} />
-    <CameraRig paused={props.paused} />
+    <CameraRig paused={props.paused} orbitEnabled={props.orbitEnabled} />
     <TownBackdrop />
     <Box position={[0,-.045,1]} size={[10.5,.08,9.5]} color="#7f9592" />
     <Box position={[0,0,-3.9]} size={[11,.18,1.2]} color="#efe0be" />

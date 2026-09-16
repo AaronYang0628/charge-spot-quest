@@ -84,58 +84,56 @@ export function mockGetReservedPeriods(date: string, spotId: SpotId = BOOKABLE_S
     .map((b) => b.period)
 }
 
-function idleFromOccupancy(
-  reserved: TimePeriod[],
-  period: TimePeriod,
-  freeIdle: number,
-  bookedIdle = 0.08,
-): number {
-  return reserved.includes(period) ? bookedIdle : freeIdle
+/** Booked period → 0% idle; free period → 100% idle. */
+function idleForPeriod(reserved: TimePeriod[], period: TimePeriod): number {
+  return reserved.includes(period) ? 0 : 1
 }
 
 export function mockGetSpots(): SpotStatus[] {
   const today = todayISO()
+  const reservedA = mockGetReservedPeriods(today, 'A')
+  const reservedB = mockGetReservedPeriods(today, 'B')
   const reservedC = mockGetReservedPeriods(today, 'C')
-  // Maintenance bays: static mock idle per period (no live occupancy feed).
-  const aMorning = 0.18
-  const aNoon = 0.28
-  const aEvening = 0.35
-  const bMorning = 0.1
-  const bNoon = 0.16
-  const bEvening = 0.22
-  // Bookable bay: derive from today's reserved periods when booked → low idle.
-  const cMorning = idleFromOccupancy(reservedC, 'morning', 0.82)
-  const cNoon = idleFromOccupancy(reservedC, 'noon', 0.71)
-  const cEvening = idleFromOccupancy(reservedC, 'evening', 0.64)
+  const aMorning = idleForPeriod(reservedA, 'morning')
+  const aNoon = idleForPeriod(reservedA, 'noon')
+  const aEvening = idleForPeriod(reservedA, 'evening')
+  const bMorning = idleForPeriod(reservedB, 'morning')
+  const bNoon = idleForPeriod(reservedB, 'noon')
+  const bEvening = idleForPeriod(reservedB, 'evening')
+  const cMorning = idleForPeriod(reservedC, 'morning')
+  const cNoon = idleForPeriod(reservedC, 'noon')
+  const cEvening = idleForPeriod(reservedC, 'evening')
   return [
     {
       id: 'A',
       maintenance: true,
       bookable: false,
       occupied: false,
-      idleIn1h: 0.12,
+      idleIn1h: aMorning,
       idleTonight: aEvening,
       idleMorning: aMorning,
       idleNoon: aNoon,
       idleEvening: aEvening,
+      reservedPeriods: reservedA,
     },
     {
       id: 'B',
       maintenance: true,
       bookable: false,
       occupied: false,
-      idleIn1h: 0.08,
+      idleIn1h: bMorning,
       idleTonight: bEvening,
       idleMorning: bMorning,
       idleNoon: bNoon,
       idleEvening: bEvening,
+      reservedPeriods: reservedB,
     },
     {
       id: 'C',
       maintenance: false,
       bookable: reservedC.length < 3,
       occupied: false,
-      idleIn1h: 0.78,
+      idleIn1h: cMorning,
       idleTonight: cEvening,
       idleMorning: cMorning,
       idleNoon: cNoon,

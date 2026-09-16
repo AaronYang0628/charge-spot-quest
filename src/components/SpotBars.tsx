@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import type { SpotStatus, TimePeriod } from '../types'
+import type { SpotId, SpotStatus, TimePeriod } from '../types'
 import { SPOT_LABELS } from '../types'
 import { currentIdlePeriod, formatElapsed } from '../lib/time'
 
@@ -7,16 +7,26 @@ interface Props {
   spot: SpotStatus
 }
 
-const PERIOD_BARS: { key: TimePeriod; label: string; valueKey: 'idleMorning' | 'idleNoon' | 'idleEvening' }[] = [
-  { key: 'morning', label: '今早空闲', valueKey: 'idleMorning' },
-  { key: 'noon', label: '中午空闲', valueKey: 'idleNoon' },
-  { key: 'evening', label: '今晚空闲', valueKey: 'idleEvening' },
-]
+const PERIOD_META: Record<TimePeriod, { label: string; valueKey: 'idleMorning' | 'idleNoon' | 'idleEvening' }> = {
+  morning: { label: '今早空闲', valueKey: 'idleMorning' },
+  noon: { label: '中午空闲', valueKey: 'idleNoon' },
+  evening: { label: '今晚空闲', valueKey: 'idleEvening' },
+}
+
+/** Bay power (kW): 649 has charger; 647/648 maintenance = 0. */
+const SPOT_POWER_KW: Record<SpotId, number> = {
+  A: 0,
+  B: 0,
+  C: 7,
+}
 
 export function SpotBars({ spot }: Props) {
   const [now, setNow] = useState(() => Date.now())
   const label = SPOT_LABELS[spot.id]
   const current = currentIdlePeriod(new Date(now))
+  const { label: barLabel, valueKey } = PERIOD_META[current]
+  const value = spot[valueKey]
+  const powerKw = SPOT_POWER_KW[spot.id]
 
   useEffect(() => {
     // Tick every minute so period highlight flips at 08/12/18 without a refresh.
@@ -75,20 +85,20 @@ export function SpotBars({ spot }: Props) {
         )}
       </div>
 
+      <div
+        className="text-[10px] font-bold"
+        style={{ color: 'var(--ui-muted)' }}
+      >
+        功率 {powerKw}kW
+      </div>
+
       <div className="space-y-1">
-        {PERIOD_BARS.map(({ key, label: barLabel, valueKey }) => {
-          const value = spot[valueKey]
-          const active = key === current
-          return (
-            <Bar
-              key={key}
-              label={barLabel}
-              value={value}
-              active={active}
-              fill={active ? 'var(--ui-accent)' : 'var(--ui-muted)'}
-            />
-          )
-        })}
+        <Bar
+          label={barLabel}
+          value={value}
+          active
+          fill="var(--ui-accent)"
+        />
       </div>
 
       {spot.occupied && (
@@ -153,7 +163,6 @@ function Bar({
       >
         <span className={active ? 'font-bold' : undefined}>
           {label}
-          {active ? ' · 此刻' : ''}
         </span>
         <span className="font-bold" style={{ color: 'var(--ui-text)' }}>
           {pct}%

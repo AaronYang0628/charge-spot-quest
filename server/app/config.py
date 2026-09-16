@@ -26,6 +26,11 @@ class Settings(BaseSettings):
     # When true, POST /api/demo/reset is allowed.
     allow_demo_reset: bool = False
 
+    # Full DingTalk custom-robot webhook URL (optional). Never commit the real token.
+    dingtalk_webhook_url: str | None = None
+    # DingTalk 加签 secret (SEC). Required together with webhook URL.
+    dingtalk_sec_secret: str | None = None
+
     # Comma-separated origins; empty / * → allow all (local Vite + same-origin later).
     cors_origins: str = "*"
 

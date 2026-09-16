@@ -74,12 +74,15 @@ body {
 .scene-toolbar { display:flex; justify-content:space-between; padding:14px 12px 0; font-size:9px; letter-spacing:.12em; color:#5c685f; font-weight:800; }
 .scene-toolbar b { font-weight:500; letter-spacing:0; }
 .daylight { color:#aa8341; }
-.scene-canvas { height:clamp(290px, 85vw, 420px); position:relative; touch-action:none; isolation:isolate; z-index:0; }
-.scene-canvas canvas, .scene-canvas > div { touch-action:none !important; }
+.scene-canvas { height:clamp(290px, 85vw, 420px); position:relative; isolation:isolate; z-index:0; }
+.scene-canvas.orbit-locked { touch-action:pan-y; }
+.scene-canvas.orbit-locked canvas, .scene-canvas.orbit-locked > div { touch-action:pan-y !important; }
+.scene-canvas.orbit-unlocked { touch-action:none; }
+.scene-canvas.orbit-unlocked canvas, .scene-canvas.orbit-unlocked > div { touch-action:none !important; }
 .scene-controls { display:flex; align-items:center; gap:8px; padding:0 12px 12px; color:#6d776e; font-size:9px; }
 .scene-controls > span { flex:1; }
 .scene-controls button { border:1px solid #d9dfd4; border-radius:6px; padding:5px; background:#fff; white-space:nowrap; }
-.reserve-button { display:flex; justify-content:space-between; width:calc(100% - 24px); margin:0 12px 12px; padding:13px 16px; border-radius:10px; color:white; background:#5870c0; font-weight:700; font-size:13px; }
+.reserve-button { display:flex; justify-content:center; align-items:center; text-align:center; width:calc(100% - 24px); margin:0 12px 12px; padding:13px 16px; border-radius:10px; color:white; background:#5870c0; font-weight:700; font-size:13px; }
 .bay-letter { font-size:15px; font-weight:900; color:#f5f2df; text-shadow:0 1px 1px #707b70; letter-spacing:.02em; }
 .booking-handle { user-select:none; -webkit-user-select:none; }
 .scene-tag { display:block; padding:5px 8px; border-radius:5px; font-size:10px; font-weight:700; white-space:nowrap; box-shadow:0 2px 5px #263e3020; }
