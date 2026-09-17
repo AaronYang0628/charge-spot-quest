@@ -1,15 +1,16 @@
 # charge-spot-quest Helm chart
 
-部署 **邻里互助 · 共享充电** UI + API（同容器：Vite SPA + FastAPI）到 Kubernetes / k3s。
+部署 **邻里互助 · 共享充电**（Charge Spot Quest）：邻居预约慢充 + 超级插队；同容器 Vite/React/R3F SPA + FastAPI。
 
 - Chart / app：**0.1.13**
 - 默认镜像：`ghcr.io/aaronyang0628/charge-spot-quest:0.1.13`（含前端；Ingress `/` 为应用，`/api` 为 API）
 - 需要：Kubernetes `>= 1.25`
 - 无 Bitnami 依赖（方便国内镜像环境）
+- 钉钉：一等公民 `dingtalk.enabled` + `existingSecret` + `publicBaseUrl`（勿再靠巨型 `extraEnv`）
 
-> **给其他 agent：** 总述在仓库根 [README.md](../../README.md)「Deploy — Helm / k3s」；本页是命令与 values 细则。  
-> 镜像自 **0.1.11** 起含 UI：`rollout restart` / helm upgrade 到 `0.1.13` 后 Ingress `/` 应出 HTML。  
-> **不要**提交真实域名 / 内网 IP / 密码；用 `charge-spot.example.com`、`pg.example.com`。
+> **给其他 agent：** 产品与总述在仓库根 [README.md](../../README.md)；本页是 Helm 命令与 values 细则。  
+> 镜像自 **0.1.11** 起含 UI：`helm upgrade` / `rollout restart` 到 `0.1.13` 后 Ingress `/` 应出 HTML。  
+> **不要**提交真实域名 / 内网 IP / 密码 / webhook；用 `charge-spot.example.com`、`pg.example.com`。
 
 ## 数据库模式（三选一）
 

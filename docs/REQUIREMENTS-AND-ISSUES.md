@@ -1,5 +1,7 @@
 # 充电车位小站 · 需求与问题清单
 
+> **状态（2026-09-17）：** 产品已可用（慢充预约 649、超级插队 ¥5 stub、钉钉通知、Helm `dingtalk.*`）。下文多为早期 WIP 考古，**以根 [README.md](../README.md) 当前功能为准**；文中「无支付 / 纯 mock / WIP UI」等表述已过时。
+
 > 仓库：https://github.com/AaronYang0628/charge-spot-quest（私有）  
 > 文档日期：2026-09-14  
 > 当前代码：`main`（推送时请以最新 commit 为准）  
