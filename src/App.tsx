@@ -24,7 +24,7 @@ export default function App() {
     cutIn,
     showToast,
     dismissResult,
-    resetAll, onDrawerExited, onParked, onFinished,
+    onDrawerExited, onParked, onFinished,
   } = useAppState()
 
   const huge = formatHugeDate()
@@ -80,14 +80,6 @@ export default function App() {
           <span className="mt-1 block opacity-70">早 · 中 · 晚，把合适的时间留给邻居。</span>
         </p>
 
-        <button
-          type="button"
-          onClick={() => void resetAll()}
-          className="mx-auto block text-[10px] underline"
-          style={{ color: 'var(--ui-muted)', textDecorationColor: 'var(--ui-border)' }}
-        >
-          清除本地数据
-        </button>
       </main>
 
       <BookingDrawer

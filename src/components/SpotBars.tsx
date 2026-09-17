@@ -145,18 +145,7 @@ function Bar({
 }) {
   const pct = Math.round(Math.min(1, Math.max(0, value)) * 100)
   return (
-    <div
-      className="rounded-md px-0.5 py-0.5"
-      style={
-        active
-          ? {
-              background: 'color-mix(in srgb, var(--ui-accent) 12%, transparent)',
-              boxShadow: 'inset 0 0 0 1px color-mix(in srgb, var(--ui-accent) 35%, transparent)',
-            }
-          : undefined
-      }
-      aria-current={active ? 'true' : undefined}
-    >
+    <div aria-current={active ? 'true' : undefined}>
       <div
         className="mb-0.5 flex items-center justify-between text-[10px]"
         style={{ color: active ? 'var(--ui-text)' : 'var(--ui-muted)' }}
