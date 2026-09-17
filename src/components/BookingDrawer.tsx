@@ -71,6 +71,7 @@ export function BookingDrawer({
   const [cutInOpen, setCutInOpen] = useState(false)
   const [cutInTargetPeriod, setCutInTargetPeriod] = useState<TimePeriod | null>(null)
   const sheet = useRef<HTMLDivElement>(null)
+  const plateInputRef = useRef<HTMLInputElement>(null)
   const dragControls = useDragControls()
   const openGen = useRef(0)
   const huge = formatHugeDate(date)
@@ -366,10 +367,24 @@ export function BookingDrawer({
                               color: '#ffffff',
                               boxShadow:
                                 '0 8px 24px color-mix(in srgb, var(--ui-accent) 35%, transparent)',
+                              ...(hostTaken
+                                ? {
+                                    outline: '2px solid #e8b84a',
+                                    outlineOffset: '1px',
+                                  }
+                                : {}),
                             }
                           : {
-                              background: 'var(--ui-tile, #f4f4f5)',
+                              background: hostTaken
+                                ? 'color-mix(in srgb, #e8b84a 12%, var(--ui-tile, #f4f4f5))'
+                                : 'var(--ui-tile, #f4f4f5)',
                               color: 'var(--ui-text)',
+                              ...(hostTaken
+                                ? {
+                                    boxShadow:
+                                      'inset 0 0 0 1.5px color-mix(in srgb, #e8b84a 75%, transparent), 0 0 0 1px color-mix(in srgb, #e8b84a 35%, transparent)',
+                                  }
+                                : {}),
                             }
                       }
                     >
@@ -382,6 +397,81 @@ export function BookingDrawer({
                 })}
               </div>
 
+              {showCutIn && (
+                <div
+                  className="cutin-hero mb-4 rounded-2xl p-3.5"
+                  style={{
+                    background:
+                      'linear-gradient(135deg, color-mix(in srgb, #e8b84a 16%, #fff8e8) 0%, color-mix(in srgb, var(--ui-warn) 10%, #fff) 100%)',
+                    border: '1px solid color-mix(in srgb, #e8b84a 55%, transparent)',
+                    boxShadow: '0 10px 28px -16px color-mix(in srgb, #c9892a 45%, transparent)',
+                  }}
+                >
+                  <div className="mb-1 flex items-start justify-between gap-2">
+                    <h3
+                      className="text-[17px] font-black leading-tight tracking-tight"
+                      style={{ color: '#8a5a12' }}
+                    >
+                      ⚡ 超级插队 · ¥5
+                    </h3>
+                    <span
+                      className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-black"
+                      style={{
+                        background: 'color-mix(in srgb, #e8b84a 28%, #fff)',
+                        color: '#9a6410',
+                        border: '1px solid color-mix(in srgb, #e8b84a 55%, transparent)',
+                      }}
+                    >
+                      限时通道
+                    </span>
+                  </div>
+                  <p className="text-[12px] font-bold leading-snug" style={{ color: '#a66b18' }}>
+                    车主档可让 · 今晚你先充电
+                  </p>
+                  <p className="mt-0.5 text-[11px] leading-snug" style={{ color: '#b07a2e' }}>
+                    插队成功立即登记，扫码即付
+                  </p>
+                  <button
+                    type="button"
+                    disabled={confirming}
+                    onClick={() => {
+                      if (!vehicle.plate.trim()) {
+                        onToast?.(CUT_IN_NEED_PLATE)
+                        plateInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                        plateInputRef.current?.focus()
+                        return
+                      }
+                      const target = resolveCutInPeriod()
+                      if (!target) {
+                        onToast?.(CUT_IN_NEED_HOST_PERIOD)
+                        return
+                      }
+                      setCutInTargetPeriod(target)
+                      setCutInOpen(true)
+                      void onCutIn(vehicle, target).then((res) => {
+                        if (!res.ok) {
+                          onToast?.(res.reason || '插队失败')
+                          setCutInOpen(false)
+                          setCutInTargetPeriod(null)
+                        }
+                      })
+                    }}
+                    className="cutin-cta relative mt-3 flex w-full items-center justify-center gap-2 overflow-hidden rounded-2xl py-3.5 text-[15px] font-black text-white"
+                  >
+                    <span className="relative z-[1]">⚡ 立即插队 · ¥5</span>
+                    <span
+                      className="relative z-[1] rounded-full px-1.5 py-0.5 text-[9px] font-black tracking-wide"
+                      style={{
+                        background: 'rgba(255,255,255,0.22)',
+                        border: '1px solid rgba(255,255,255,0.35)',
+                      }}
+                    >
+                      限时通道
+                    </span>
+                  </button>
+                </div>
+              )}
+
               <label className="mb-1 block">
                 <span
                   className="mb-1 block text-[11px] font-bold"
@@ -390,6 +480,7 @@ export function BookingDrawer({
                   车牌号
                 </span>
                 <input
+                  ref={plateInputRef}
                   value={plate}
                   onChange={(e) => setPlate(e.target.value.toUpperCase())}
                   placeholder="例如 沪A12345"
@@ -459,40 +550,6 @@ export function BookingDrawer({
                 {confirming ? '提交中…' : periodReady ? '确认预约' : '请选择可用时段'}
               </button>
 
-              {showCutIn && (
-                <button
-                  type="button"
-                  disabled={confirming}
-                  onClick={() => {
-                    if (!vehicle.plate.trim()) {
-                      onToast?.(CUT_IN_NEED_PLATE)
-                      return
-                    }
-                    const target = resolveCutInPeriod()
-                    if (!target) {
-                      onToast?.(CUT_IN_NEED_HOST_PERIOD)
-                      return
-                    }
-                    setCutInTargetPeriod(target)
-                    setCutInOpen(true)
-                    void onCutIn(vehicle, target).then((res) => {
-                      if (!res.ok) {
-                        onToast?.(res.reason || '插队失败')
-                        setCutInOpen(false)
-                        setCutInTargetPeriod(null)
-                      }
-                    })
-                  }}
-                  className="mt-2 w-full rounded-2xl py-3 text-[14px] font-black"
-                  style={{
-                    background: 'color-mix(in srgb, var(--ui-warn) 14%, transparent)',
-                    color: 'var(--ui-warn)',
-                    border: '1px solid color-mix(in srgb, var(--ui-warn) 45%, transparent)',
-                  }}
-                >
-                  超级插队5元
-                </button>
-              )}
             </div>
           </motion.div>
 

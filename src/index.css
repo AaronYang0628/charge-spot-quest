@@ -154,3 +154,72 @@ body { background:#f2efe7; }
 .gallery .vehicle-colors-row { padding:0 22px 18px; }
 .showroom-page footer { text-align:center; color:#9ca18f; font-size:10px; padding:2px 0; }
 @media(max-width:480px) { .showroom-page { padding:18px 14px; } .showroom-header { padding-bottom:16px; } .showroom-header p { margin-top:22px; } .gallery .vehicle-choices { padding:0 10px 12px; gap:5px; } .gallery .vehicle-choice-icon { width:46px; } }
+
+/* Super cut-in CTA — amber/gold shimmer + soft pulse glow */
+@keyframes cutin-shimmer {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+@keyframes cutin-pulse {
+  0%, 100% {
+    box-shadow:
+      0 0 0 0 color-mix(in srgb, #e8b84a 0%, transparent),
+      0 10px 28px color-mix(in srgb, #c9892a 42%, transparent);
+  }
+  50% {
+    box-shadow:
+      0 0 0 6px color-mix(in srgb, #e8b84a 18%, transparent),
+      0 12px 32px color-mix(in srgb, #c9892a 50%, transparent);
+  }
+}
+.cutin-cta {
+  background: linear-gradient(
+    110deg,
+    #d97706 0%,
+    #f0b429 22%,
+    #fbbf24 38%,
+    #ea8c2a 55%,
+    #f0b429 72%,
+    #d97706 100%
+  );
+  background-size: 200% 100%;
+  animation:
+    cutin-shimmer 2.4s linear infinite,
+    cutin-pulse 2.2s ease-in-out infinite;
+  border: 1px solid color-mix(in srgb, #c9892a 70%, #fff);
+}
+.cutin-cta::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    transparent 0%,
+    transparent 42%,
+    rgba(255, 255, 255, 0.45) 50%,
+    transparent 58%,
+    transparent 100%
+  );
+  background-size: 220% 100%;
+  animation: cutin-shimmer 2.4s linear infinite;
+  pointer-events: none;
+}
+.cutin-cta:disabled {
+  animation: none;
+  opacity: 0.6;
+}
+.cutin-cta:disabled::after {
+  animation: none;
+  opacity: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .cutin-cta,
+  .cutin-cta::after {
+    animation: none !important;
+  }
+  .cutin-cta {
+    background: linear-gradient(135deg, #d97706, #f0b429);
+    background-size: 100% 100%;
+    box-shadow: 0 10px 28px color-mix(in srgb, #c9892a 42%, transparent);
+  }
+}
