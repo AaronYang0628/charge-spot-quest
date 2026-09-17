@@ -87,13 +87,13 @@ export function useAppState() {
     } finally { if (request === generation.current) setConfirming(false) }
   }
 
-  const cutIn = async (vehicle: VehicleInfo): Promise<BookResult> => {
+  const cutIn = async (vehicle: VehicleInfo, period?: TimePeriod): Promise<BookResult> => {
     if (busy.current) return { ok: false, reason: '请稍候' }
     busy.current = true
     setConfirming(true)
     const request = generation.current
     try {
-      const res = await api.cutInBooking({ sessionId: state.sessionId, vehicle })
+      const res = await api.cutInBooking({ sessionId: state.sessionId, vehicle, period })
       if (request !== generation.current) return res
       if (!res.ok || !res.booking) {
         setResult({ ok: false, reason: res.reason || '插队失败，请重试' })

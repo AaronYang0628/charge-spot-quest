@@ -235,6 +235,7 @@ export function mockCreateBooking(input: {
 export function mockCutInBooking(input: {
   sessionId: string
   vehicle: VehicleInfo
+  period?: TimePeriod
 }) {
   const bookings = read()
   const vehicle = normalizeVehicle(input.vehicle)
@@ -242,7 +243,7 @@ export function mockCutInBooking(input: {
     return { ok: false, reason: '请先填写车牌号' }
   }
   const today = todayISO()
-  const period = currentIdlePeriod()
+  const period = input.period ?? currentIdlePeriod()
   const host = bookings.find(
     (b) =>
       !b.cancelled &&

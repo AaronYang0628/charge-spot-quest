@@ -95,7 +95,7 @@ export default function App() {
         initialVehicle={state.vehicle}
         onClose={closeDrawer}
         onConfirm={(period, vehicle, date) => void confirm(period, vehicle, date)}
-        onCutIn={(vehicle) => cutIn(vehicle)}
+        onCutIn={(vehicle, period) => cutIn(vehicle, period)}
         confirming={confirming}
         onExited={onDrawerExited}
         todayBookings={todayBookings}

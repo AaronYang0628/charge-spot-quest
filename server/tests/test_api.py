@@ -443,3 +443,48 @@ def test_cut_in_rejects_non_host(client):
     )
     assert r.json()["ok"] is False
     assert "车主" in (r.json()["reason"] or "")
+
+def test_cut_in_explicit_period_supersedes_that_host_slot(client):
+    """Cut-in body.period targets a host-held slot even when clock period differs."""
+    from app.timeutil import current_idle_period, today_iso
+    from app.host_plates import HOST_PLATES
+
+    today = today_iso()
+    clock = current_idle_period()
+    target = "morning" if clock == "evening" else "evening"
+    host_plate = next(iter(HOST_PLATES))
+
+    if target != "evening":
+        plant = client.post(
+            "/api/bookings",
+            json={
+                "sessionId": "host-alt",
+                "date": today,
+                "period": target,
+                "vehicle": {"plate": host_plate, "color": "blue", "type": "sedan"},
+            },
+        )
+        assert plant.json()["ok"] is True
+
+    r = client.post(
+        "/api/bookings/cut-in",
+        json={
+            "sessionId": "cut-in-explicit",
+            "vehicle": {"plate": "沪B88888", "color": "black", "type": "compact"},
+            "period": target,
+        },
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["ok"] is True
+    assert data["booking"]["period"] == target
+    assert data["booking"]["vehicle"]["plate"] == "沪B88888"
+
+    today_rows = client.get("/api/bookings/today").json()
+    period_rows = [row for row in today_rows if row["spotId"] == "C" and row["period"] == target]
+    assert any(row["status"] == "cut_in_replaced" for row in period_rows)
+    assert any(row["status"] == "booked" for row in period_rows)
+
+    reserved = client.get("/api/spots/C/reserved", params={"date": today}).json()
+    assert target in reserved
+

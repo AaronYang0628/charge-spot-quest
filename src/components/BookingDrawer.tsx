@@ -11,13 +11,13 @@ import { api } from '../api/client'
 import { asset } from '../lib/asset'
 import {
   addDaysISO,
-  currentIdlePeriod,
   formatHugeDate,
   maxBookingISO,
   todayISO,
 } from '../lib/time'
 import { loadPlateHistory, type PlateHistoryEntry } from '../lib/plateHistory'
 import {
+  CUT_IN_NEED_HOST_PERIOD,
   CUT_IN_NEED_PLATE,
   CUT_IN_QR_CAPTION,
   isHostCutInAvailable,
@@ -30,8 +30,8 @@ interface Props {
   initialVehicle: VehicleInfo | null
   onClose: () => void
   onConfirm: (period: TimePeriod, vehicle: VehicleInfo, date: string) => void
-  /** Optimistic cut-in register for current Shanghai period; returns API result. */
-  onCutIn: (vehicle: VehicleInfo) => Promise<BookResult>
+  /** Optimistic cut-in for a host-held period (defaults server-side to current idle). */
+  onCutIn: (vehicle: VehicleInfo, period: TimePeriod) => Promise<BookResult>
   confirming?: boolean
   onExited: () => void
   /** Today's public bookings (masked) — used for host cut-in visibility. */
@@ -68,6 +68,7 @@ export function BookingDrawer({
   const [type, setType] = useState<VehicleType>(DEFAULT_VEHICLE.type)
   const [plateHistory, setPlateHistory] = useState<PlateHistoryEntry[]>([])
   const [cutInOpen, setCutInOpen] = useState(false)
+  const [cutInTargetPeriod, setCutInTargetPeriod] = useState<TimePeriod | null>(null)
   const sheet = useRef<HTMLDivElement>(null)
   const dragControls = useDragControls()
   const openGen = useRef(0)
@@ -86,6 +87,7 @@ export function BookingDrawer({
       if (e.key === 'Escape' && !confirming) {
         if (cutInOpen) {
           setCutInOpen(false)
+          setCutInTargetPeriod(null)
           return
         }
         onClose()
@@ -116,6 +118,7 @@ export function BookingDrawer({
     setType(v?.type ?? DEFAULT_VEHICLE.type)
     setPeriod(null)
     setCutInOpen(false)
+    setCutInTargetPeriod(null)
     try {
       setPlateHistory(loadPlateHistory())
     } catch {
@@ -129,12 +132,22 @@ export function BookingDrawer({
     if (!open) return
     let cancelled = false
     const gen = openGen.current
+    const day = date
+    const bookings = todayBookings
     setLoadingSlots(true)
     void api.getReservedPeriods(date, 'C').then((reserved) => {
       if (cancelled || gen !== openGen.current) return
       setReservedPeriods(reserved)
+      const todayStr = todayISO()
+      const selectable = (p: TimePeriod) => {
+        if (!reserved.includes(p)) return true
+        return (
+          day === todayStr &&
+          isHostCutInAvailable({ period: p, todayBookings: bookings })
+        )
+      }
       setPeriod((current) => {
-        if (current && !reserved.includes(current)) return current
+        if (current && selectable(current)) return current
         return PERIODS.find((p) => !reserved.includes(p)) ?? null
       })
       setLoadingSlots(false)
@@ -144,7 +157,7 @@ export function BookingDrawer({
       setLoadingSlots(false)
     })
     return () => { cancelled = true }
-  }, [open, date])
+  }, [open, date, todayBookings])
 
   const vehicle: VehicleInfo = {
     plate: plate.trim(),
@@ -168,9 +181,12 @@ export function BookingDrawer({
           isHostCutInAvailable({ period: p, todayBookings }),
         )
       : []
-  const currentPeriod = currentIdlePeriod()
-  const showCutIn =
-    date === today && isHostCutInAvailable({ period: currentPeriod, todayBookings })
+  const showCutIn = date === today && hostTakenPeriods.length > 0
+
+  const resolveCutInPeriod = (): TimePeriod | null => {
+    if (period && hostTakenPeriods.includes(period)) return period
+    return hostTakenPeriods[0] ?? null
+  }
 
   return (
     <AnimatePresence onExitComplete={onExited}>
@@ -318,6 +334,7 @@ export function BookingDrawer({
                   const taken = reservedPeriods.includes(p)
                   const on = period === p
                   const hostTaken = hostTakenPeriods.includes(p)
+                  const blocked = taken && !hostTaken
                   return (
                     <button
                       key={`${date}-${p}`}
@@ -325,7 +342,7 @@ export function BookingDrawer({
                       role="radio"
                       aria-checked={on}
                       aria-label={`${PERIOD_LABELS[p]} ${taken ? (hostTaken ? '车主占用' : '已预约') : PERIOD_HINTS[p]}`}
-                      disabled={taken || confirming || loadingSlots}
+                      disabled={blocked || confirming || loadingSlots}
                       onPointerDown={(e) => {
                         // Prevent parent drag / scroll from swallowing the tap.
                         e.stopPropagation()
@@ -333,7 +350,7 @@ export function BookingDrawer({
                       onClick={(e) => {
                         e.preventDefault()
                         e.stopPropagation()
-                        if (taken || confirming || loadingSlots) return
+                        if (blocked || confirming || loadingSlots) return
                         setPeriod(p)
                       }}
                       className="rounded-2xl py-3 text-center transition select-none"
@@ -446,11 +463,18 @@ export function BookingDrawer({
                       onToast?.(CUT_IN_NEED_PLATE)
                       return
                     }
+                    const target = resolveCutInPeriod()
+                    if (!target) {
+                      onToast?.(CUT_IN_NEED_HOST_PERIOD)
+                      return
+                    }
+                    setCutInTargetPeriod(target)
                     setCutInOpen(true)
-                    void onCutIn(vehicle).then((res) => {
+                    void onCutIn(vehicle, target).then((res) => {
                       if (!res.ok) {
                         onToast?.(res.reason || '插队失败')
                         setCutInOpen(false)
+                        setCutInTargetPeriod(null)
                       }
                     })
                   }}
@@ -475,7 +499,10 @@ export function BookingDrawer({
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.18 }}
-                onClick={() => setCutInOpen(false)}
+                onClick={() => {
+                  setCutInOpen(false)
+                  setCutInTargetPeriod(null)
+                }}
               >
                 <motion.div
                   role="dialog"
@@ -499,7 +526,9 @@ export function BookingDrawer({
                     {CUT_IN_QR_CAPTION}
                   </p>
                   <p className="mt-1 text-[11px]" style={{ color: 'var(--ui-muted)' }}>
-                    车牌 {vehicle.plate} · 已为你抢占当前时段 · 请用支付宝扫码支付
+                    车牌 {vehicle.plate} · 已为你抢占
+                    {cutInTargetPeriod ? PERIOD_LABELS[cutInTargetPeriod] : '当前'}
+                    时段 · 请用支付宝扫码支付
                   </p>
                   <div
                     className="mt-4 overflow-hidden rounded-2xl"
@@ -514,7 +543,10 @@ export function BookingDrawer({
                   </div>
                   <button
                     type="button"
-                    onClick={() => setCutInOpen(false)}
+                    onClick={() => {
+                      setCutInOpen(false)
+                      setCutInTargetPeriod(null)
+                    }}
                     className="mt-4 w-full rounded-2xl py-2.5 text-sm font-bold"
                     style={{
                       background: 'var(--ui-tile, #f4f4f5)',

@@ -69,6 +69,7 @@ class CreateBookingBody(BaseModel):
 class CutInBookingBody(BaseModel):
     sessionId: str = Field(min_length=1, max_length=128)
     vehicle: VehicleInfo
+    period: TimePeriod | None = None
 
 
 class BookResult(BaseModel):

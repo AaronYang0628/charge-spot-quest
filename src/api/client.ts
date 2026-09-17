@@ -106,6 +106,7 @@ export const api = {
   async cutInBooking(input: {
     sessionId: string
     vehicle: VehicleInfo
+    period?: TimePeriod
   }): Promise<BookResult> {
     if (USE_API) {
       return apiFetch<BookResult>('/api/bookings/cut-in', {

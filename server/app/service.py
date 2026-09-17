@@ -254,13 +254,13 @@ def create_booking(db: Session, body: CreateBookingBody) -> BookResult:
 
 
 def create_cut_in(db: Session, body: CutInBookingBody) -> BookResult:
-    """Optimistic ¥5 host cut-in for the current Shanghai period on bay C."""
+    """Optimistic ¥5 host cut-in for a host-held period on bay C (default: clock period)."""
     vehicle = normalize_vehicle(body.vehicle)
     if not vehicle.plate.strip():
         return BookResult(ok=False, reason="请先填写车牌号")
 
     today = today_iso()
-    period = current_idle_period()
+    period = body.period or current_idle_period()
 
     host = db.scalar(
         select(BookingRow).where(

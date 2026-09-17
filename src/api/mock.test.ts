@@ -195,4 +195,46 @@ describe('reservation mock', () => {
     ).toBe(false)
   })
 
+  it('cut-in with explicit period supersedes host for that period (not only clock)', () => {
+    const clock = currentIdlePeriod()
+    const target: 'morning' | 'noon' | 'evening' =
+      clock === 'evening' ? 'morning' : 'evening'
+
+    if (target !== 'evening') {
+      const plant = mockCreateBooking({
+        sessionId: 'host-alt-period',
+        date: todayISO(),
+        period: target,
+        vehicle: { plate: '浙ACU6508', color: 'white', type: 'sedan' },
+      })
+      expect(plant.ok).toBe(true)
+    }
+
+    const res = mockCutInBooking({
+      sessionId: 'cut-in-target',
+      vehicle: { plate: '沪B88888', color: 'black', type: 'compact' },
+      period: target,
+    })
+    expect(res.ok).toBe(true)
+    expect(res.booking?.period).toBe(target)
+    expect(res.booking?.vehicle.plate).toBe('沪B88888')
+
+    const today = mockGetTodayBookings()
+    expect(
+      today.some(
+        (r) =>
+          r.spotId === 'C' &&
+          r.period === target &&
+          r.status === 'cut_in_replaced' &&
+          isHostPlateMasked(r.plateMasked),
+      ),
+    ).toBe(true)
+    expect(
+      today.some(
+        (r) => r.spotId === 'C' && r.period === target && r.status === 'booked',
+      ),
+    ).toBe(true)
+    expect(mockGetReservedPeriods(todayISO(), 'C')).toContain(target)
+  })
+
 })

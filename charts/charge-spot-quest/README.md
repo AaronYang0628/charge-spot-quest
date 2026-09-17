@@ -2,13 +2,13 @@
 
 部署 **邻里互助 · 共享充电** UI + API（同容器：Vite SPA + FastAPI）到 Kubernetes / k3s。
 
-- Chart / app：**0.1.3**
-- 默认镜像：`ghcr.io/aaronyang0628/charge-spot-quest:0.1.3`（含前端；Ingress `/` 为应用，`/api` 为 API）
+- Chart / app：**0.1.5**
+- 默认镜像：`ghcr.io/aaronyang0628/charge-spot-quest:0.1.5`（含前端；Ingress `/` 为应用，`/api` 为 API）
 - 需要：Kubernetes `>= 1.25`
 - 无 Bitnami 依赖（方便国内镜像环境）
 
 > **给其他 agent：** 总述在仓库根 [README.md](../../README.md)「Deploy — Helm / k3s」；本页是命令与 values 细则。  
-> 镜像自 **0.1.3** 起含 UI：`rollout restart` / helm upgrade 到 `0.1.3` 后 Ingress `/` 应出 HTML。  
+> 镜像自 **0.1.5** 起含 UI：`rollout restart` / helm upgrade 到 `0.1.5` 后 Ingress `/` 应出 HTML。  
 > **不要**提交真实域名 / 内网 IP / 密码；用 `charge-spot.example.com`、`pg.example.com`。
 
 ## 数据库模式（三选一）
@@ -27,7 +27,7 @@
 helm upgrade --install charge-spot-quest ./charts/charge-spot-quest \
   -n charge-spot --create-namespace \
   --set image.repository=ghcr.io/aaronyang0628/charge-spot-quest \
-  --set image.tag=0.1.3 \
+  --set image.tag=0.1.5 \
   --set postgresql.enabled=false \
   --set sqlite.enabled=true
 ```
@@ -42,7 +42,7 @@ helm upgrade --install charge-spot-quest ./charts/charge-spot-quest \
 helm upgrade --install charge-spot-quest ./charts/charge-spot-quest \
   -n charge-spot --create-namespace \
   --set image.repository=ghcr.io/aaronyang0628/charge-spot-quest \
-  --set image.tag=0.1.3 \
+  --set image.tag=0.1.5 \
   --set postgresql.enabled=true \
   --set sqlite.enabled=false \
   --set postgresql.auth.password="$(openssl rand -hex 16)"
@@ -61,7 +61,7 @@ kubectl -n charge-spot create secret generic charge-spot-db \
 helm upgrade --install charge-spot-quest ./charts/charge-spot-quest \
   -n charge-spot --create-namespace \
   --set image.repository=ghcr.io/aaronyang0628/charge-spot-quest \
-  --set image.tag=0.1.3 \
+  --set image.tag=0.1.5 \
   --set postgresql.enabled=false \
   --set sqlite.enabled=false \
   --set externalDatabase.host=pg.example.com \
@@ -95,7 +95,7 @@ helm upgrade --install charge-spot-quest ./charts/charge-spot-quest \
 | Key | Default | Notes |
 |-----|---------|-------|
 | `image.repository` | `ghcr.io/aaronyang0628/charge-spot-quest` | 已发布 |
-| `image.tag` | `0.1.3` | 也有 `latest`、`0.1.0`、`0.1.1` |
+| `image.tag` | `0.1.5` | 也有 `latest`、`0.1.0`、`0.1.1` |
 | `service.port` | `8080` | |
 | `sqlite.enabled` | `false` | 与 PG 互斥 |
 | `sqlite.persistence.size` | `1Gi` | |
@@ -120,7 +120,7 @@ kubectl -n charge-spot create secret generic charge-spot-dingtalk \
 
 helm upgrade --install charge-spot-quest ./charts/charge-spot-quest \
   -n charge-spot \
-  --set image.tag=0.1.3 \
+  --set image.tag=0.1.5 \
   --set-json 'extraEnv=[
     {"name":"DINGTALK_WEBHOOK_URL","valueFrom":{"secretKeyRef":{"name":"charge-spot-dingtalk","key":"webhook_url"}}},
     {"name":"DINGTALK_SEC_SECRET","valueFrom":{"secretKeyRef":{"name":"charge-spot-dingtalk","key":"sec_secret"}}}
