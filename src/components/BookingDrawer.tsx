@@ -70,6 +70,8 @@ export function BookingDrawer({
   const [plateHistory, setPlateHistory] = useState<PlateHistoryEntry[]>([])
   const [cutInOpen, setCutInOpen] = useState(false)
   const [cutInTargetPeriod, setCutInTargetPeriod] = useState<TimePeriod | null>(null)
+  const [cutInError, setCutInError] = useState<string | null>(null)
+  const [cutInBusy, setCutInBusy] = useState(false)
   const sheet = useRef<HTMLDivElement>(null)
   const plateInputRef = useRef<HTMLInputElement>(null)
   const dragControls = useDragControls()
@@ -90,6 +92,7 @@ export function BookingDrawer({
         if (cutInOpen) {
           setCutInOpen(false)
           setCutInTargetPeriod(null)
+          setCutInError(null)
           return
         }
         onClose()
@@ -121,6 +124,8 @@ export function BookingDrawer({
     setPeriod(null)
     setCutInOpen(false)
     setCutInTargetPeriod(null)
+    setCutInError(null)
+    setCutInBusy(false)
     try {
       setPlateHistory(loadPlateHistory())
     } catch {
@@ -426,7 +431,7 @@ export function BookingDrawer({
                     </span>
                   </div>
                   <p className="text-[12px] font-bold leading-snug" style={{ color: '#a66b18' }}>
-                    车主档可让 · 今晚你先充电
+                    让车主改日再充，这个时段你先充电
                   </p>
                   <p className="mt-0.5 text-[11px] leading-snug" style={{ color: '#b07a2e' }}>
                     插队成功立即登记，扫码即付
@@ -447,14 +452,19 @@ export function BookingDrawer({
                         return
                       }
                       setCutInTargetPeriod(target)
+                      setCutInError(null)
                       setCutInOpen(true)
-                      void onCutIn(vehicle, target).then((res) => {
-                        if (!res.ok) {
-                          onToast?.(res.reason || '插队失败')
-                          setCutInOpen(false)
-                          setCutInTargetPeriod(null)
-                        }
-                      })
+                      setCutInBusy(true)
+                      void onCutIn(vehicle, target)
+                        .then((res) => {
+                          if (!res.ok) {
+                            // Keep QR open; soft inline error + retry on sheet (no toast).
+                            setCutInError(res.reason || '插队失败，请稍后重试')
+                          } else {
+                            setCutInError(null)
+                          }
+                        })
+                        .finally(() => setCutInBusy(false))
                     }}
                     className="cutin-cta relative mt-3 flex w-full items-center justify-center gap-2 overflow-hidden rounded-2xl py-3.5 text-[15px] font-black text-white"
                   >
@@ -564,6 +574,7 @@ export function BookingDrawer({
                 onClick={() => {
                   setCutInOpen(false)
                   setCutInTargetPeriod(null)
+                  setCutInError(null)
                 }}
               >
                 <motion.div
@@ -603,11 +614,50 @@ export function BookingDrawer({
                       draggable={false}
                     />
                   </div>
+                  {cutInError && (
+                    <div className="mt-3 rounded-2xl px-3 py-2.5" style={{ background: 'color-mix(in srgb, #ef4444 10%, transparent)', border: '1px solid color-mix(in srgb, #ef4444 35%, transparent)' }}>
+                      <p className="text-[12px] font-bold leading-snug" style={{ color: '#b91c1c' }}>
+                        {cutInError}
+                      </p>
+                      <button
+                        type="button"
+                        disabled={cutInBusy || confirming || !cutInTargetPeriod}
+                        onClick={() => {
+                          if (!cutInTargetPeriod) return
+                          setCutInError(null)
+                          setCutInBusy(true)
+                          void onCutIn(vehicle, cutInTargetPeriod)
+                            .then((res) => {
+                              if (!res.ok) {
+                                setCutInError(res.reason || '插队失败，请稍后重试')
+                              } else {
+                                setCutInError(null)
+                              }
+                            })
+                            .finally(() => setCutInBusy(false))
+                        }}
+                        className="mt-2 w-full rounded-xl py-2 text-[13px] font-black disabled:opacity-60"
+                        style={{
+                          background: 'color-mix(in srgb, #ef4444 18%, #fff)',
+                          color: '#b91c1c',
+                          border: '1px solid color-mix(in srgb, #ef4444 40%, transparent)',
+                        }}
+                      >
+                        {cutInBusy ? '重试中…' : '重新登记插队'}
+                      </button>
+                    </div>
+                  )}
+                  {!cutInError && cutInBusy && (
+                    <p className="mt-3 text-center text-[11px] font-semibold" style={{ color: 'var(--ui-muted)' }}>
+                      正在为你抢占时段…
+                    </p>
+                  )}
                   <button
                     type="button"
                     onClick={() => {
                       setCutInOpen(false)
                       setCutInTargetPeriod(null)
+                      setCutInError(null)
                     }}
                     className="mt-4 w-full rounded-2xl py-2.5 text-sm font-bold"
                     style={{

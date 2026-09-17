@@ -96,9 +96,9 @@ export function useAppState() {
       const res = await api.cutInBooking({ sessionId: state.sessionId, vehicle, period })
       if (request !== generation.current) return res
       if (!res.ok || !res.booking) {
-        setResult({ ok: false, reason: res.reason || '插队失败，请重试' })
+        // Soft failure: return reason for drawer/QR sheet; avoid global toast double-fire.
         await refresh()
-        return res
+        return { ok: false, reason: res.reason || '插队失败，请重试' }
       }
       try { saveVehicle(vehicle) } catch { /* ok */ }
       try { recordPlateHistory(vehicle) } catch { /* ok */ }
@@ -106,9 +106,7 @@ export function useAppState() {
       void refresh().catch(() => {})
       return res
     } catch {
-      const fail = { ok: false, reason: '提交失败，请检查网络后重试' }
-      if (request === generation.current) setResult(fail)
-      return fail
+      return { ok: false, reason: '提交失败，请检查网络后重试' }
     } finally {
       if (request === generation.current) {
         setConfirming(false)

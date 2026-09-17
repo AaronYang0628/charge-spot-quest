@@ -51,6 +51,6 @@ export function isHostCutInAvailable(opts: {
   )
 }
 
-export const CUT_IN_QR_CAPTION = '¥5 · 超级插队 · 今晚你先充电'
+export const CUT_IN_QR_CAPTION = '¥5 · 超级插队 · 这个时段你先充电'
 export const CUT_IN_NEED_PLATE = '请先填写车牌号'
 export const CUT_IN_NEED_HOST_PERIOD = '请先点选车主占用的时段'

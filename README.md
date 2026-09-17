@@ -14,7 +14,7 @@
 
 - Pages：https://aaronyang0628.github.io/charge-spot-quest/  
   （国内可能较慢；生产静态站建议 OSS/CDN 或集群 Ingress。）
-- 镜像：`ghcr.io/aaronyang0628/charge-spot-quest:0.1.9`（另有 `latest`、`0.1.0`；含前端 UI + API）  
+- 镜像：`ghcr.io/aaronyang0628/charge-spot-quest:0.1.10`（另有 `latest`、`0.1.0`；含前端 UI + API）  
   https://github.com/users/AaronYang0628/packages/container/package/charge-spot-quest
 
 ## UX
@@ -56,9 +56,9 @@ STATIC_DIR="$(pwd)/dist" uvicorn app.main:app --app-dir server --host 0.0.0.0 --
 
 ## Deploy — Helm / k3s（给其他 agent）
 
-用仓库 chart [`charts/charge-spot-quest`](charts/charge-spot-quest) 部署 **UI + API**（同镜像）。镜像默认 `ghcr.io/aaronyang0628/charge-spot-quest:0.1.9`。Ingress `/` 出前端，`/api` 为 API；探针对 `/health`、`/readyz` 默认开启。
+用仓库 chart [`charts/charge-spot-quest`](charts/charge-spot-quest) 部署 **UI + API**（同镜像）。镜像默认 `ghcr.io/aaronyang0628/charge-spot-quest:0.1.10`。Ingress `/` 出前端，`/api` 为 API；探针对 `/health`、`/readyz` 默认开启。
 
-> **Agent handoff：** 拉 `0.1.9`/`latest` 后 `kubectl -n charge-spot rollout restart deploy/charge-spot-quest`（或 helm upgrade 改 tag）；打开 Ingress 根路径应是 HTML 应用，不再是 `{"detail":"Not Found"}`。
+> **Agent handoff：** 拉 `0.1.10`/`latest` 后 `kubectl -n charge-spot rollout restart deploy/charge-spot-quest`（或 helm upgrade 改 tag）；打开 Ingress 根路径应是 HTML 应用，不再是 `{"detail":"Not Found"}`。
 
 **禁止**把真实域名、内网 IP、密码写进公开 values；用 `charge-spot.example.com`、`pg.example.com`，密钥用集群 Secret。
 
@@ -76,7 +76,7 @@ STATIC_DIR="$(pwd)/dist" uvicorn app.main:app --app-dir server --host 0.0.0.0 --
 helm upgrade --install charge-spot-quest ./charts/charge-spot-quest \
   -n charge-spot --create-namespace \
   --set image.repository=ghcr.io/aaronyang0628/charge-spot-quest \
-  --set image.tag=0.1.9 \
+  --set image.tag=0.1.10 \
   --set postgresql.enabled=false \
   --set sqlite.enabled=true
 ```
@@ -89,7 +89,7 @@ helm upgrade --install charge-spot-quest ./charts/charge-spot-quest \
 helm upgrade --install charge-spot-quest ./charts/charge-spot-quest \
   -n charge-spot --create-namespace \
   --set image.repository=ghcr.io/aaronyang0628/charge-spot-quest \
-  --set image.tag=0.1.9 \
+  --set image.tag=0.1.10 \
   --set postgresql.enabled=true \
   --set postgresql.auth.password="$(openssl rand -hex 16)"
 ```
@@ -105,7 +105,7 @@ kubectl -n charge-spot create secret generic charge-spot-db \
 helm upgrade --install charge-spot-quest ./charts/charge-spot-quest \
   -n charge-spot --create-namespace \
   --set image.repository=ghcr.io/aaronyang0628/charge-spot-quest \
-  --set image.tag=0.1.9 \
+  --set image.tag=0.1.10 \
   --set postgresql.enabled=false \
   --set sqlite.enabled=false \
   --set externalDatabase.host=pg.example.com \

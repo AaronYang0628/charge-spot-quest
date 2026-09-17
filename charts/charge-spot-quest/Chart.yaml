@@ -2,7 +2,7 @@ apiVersion: v2
 name: charge-spot-quest
 description: 邻里互助共享充电 — Charge Spot Quest (UI + API + SQLite / optional Postgres)
 type: application
-version: 0.1.9
-appVersion: "0.1.9"
+version: 0.1.10
+appVersion: "0.1.10"
 kubeVersion: ">=1.25.0-0"
 # No Bitnami deps. DB modes: sqlite.enabled, postgresql.enabled (in-chart), or externalDatabase.
