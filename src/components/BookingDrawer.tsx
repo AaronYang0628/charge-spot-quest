@@ -1,4 +1,5 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { AnimatePresence, motion, useDragControls } from 'framer-motion'
 import type { BookResult, SpotBookingView, TimePeriod, VehicleColor, VehicleInfo, VehicleType } from '../types'
 import {
@@ -72,7 +73,9 @@ export function BookingDrawer({
   const [cutInTargetPeriod, setCutInTargetPeriod] = useState<TimePeriod | null>(null)
   const [cutInError, setCutInError] = useState<string | null>(null)
   const [cutInBusy, setCutInBusy] = useState(false)
+  const [cutInSucceeded, setCutInSucceeded] = useState(false)
   const sheet = useRef<HTMLDivElement>(null)
+  const prevOpen = useRef(false)
   const plateInputRef = useRef<HTMLInputElement>(null)
   const dragControls = useDragControls()
   const openGen = useRef(0)
@@ -93,6 +96,7 @@ export function BookingDrawer({
           setCutInOpen(false)
           setCutInTargetPeriod(null)
           setCutInError(null)
+          setCutInSucceeded(false)
           return
         }
         onClose()
@@ -112,9 +116,13 @@ export function BookingDrawer({
     }
   }, [open, confirming, onClose, cutInOpen])
 
-  // Reset form only when the drawer opens — not on every reservedPeriods refresh.
+  // Reset form only on drawer open rising edge (false→true).
+  // Do NOT depend on initialVehicle mid-session — cut-in success updates
+  // state.vehicle → would re-run and setCutInOpen(false), killing the QR.
   useEffect(() => {
-    if (!open) return
+    const rising = open && !prevOpen.current
+    prevOpen.current = open
+    if (!rising) return
     const v = initialVehicle
     // oxlint-disable-next-line react/set-state-in-effect -- Reset the form for a newly opened reservation.
     setDate(todayISO())
@@ -126,13 +134,30 @@ export function BookingDrawer({
     setCutInTargetPeriod(null)
     setCutInError(null)
     setCutInBusy(false)
+    setCutInSucceeded(false)
     try {
       setPlateHistory(loadPlateHistory())
     } catch {
       setPlateHistory([])
     }
     openGen.current += 1
-  }, [open, initialVehicle])
+    // initialVehicle intentionally read only on rising edge (omit from deps).
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- rising-edge only
+  }, [open])
+
+  // Escape closes QR even if drawer already closed (QR is portaled to body).
+  useEffect(() => {
+    if (!cutInOpen) return
+    const key = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return
+      setCutInOpen(false)
+      setCutInTargetPeriod(null)
+      setCutInError(null)
+      setCutInSucceeded(false)
+    }
+    document.addEventListener('keydown', key)
+    return () => document.removeEventListener('keydown', key)
+  }, [cutInOpen])
 
   // Refresh 早/中/晚 availability when date changes (or on open).
   useEffect(() => {
@@ -199,10 +224,138 @@ export function BookingDrawer({
   }
   const showCutIn = date === today && resolveCutInPeriod() !== null
 
+  const closeCutInQr = () => {
+    setCutInOpen(false)
+    setCutInTargetPeriod(null)
+    setCutInError(null)
+    setCutInSucceeded(false)
+  }
+
+  const cutInQrOverlay = (
+    <AnimatePresence>
+      {cutInOpen && (
+        <motion.div
+          className="fixed inset-0 z-[70] flex items-end justify-center bg-black/45 px-3 pb-6 sm:items-center"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.18 }}
+        >
+          <motion.div
+            role="dialog"
+            aria-label="超级插队支付"
+            aria-modal
+            className="w-full max-w-sm rounded-3xl p-5 shadow-2xl"
+            style={{
+              background: 'var(--ui-shell-top, #ffffff)',
+              border: '1px solid var(--ui-border)',
+            }}
+            initial={{ y: 24, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 16, opacity: 0 }}
+            transition={{ duration: 0.18, ease: 'easeOut' }}
+          >
+            <h3 className="text-lg font-black" style={{ color: 'var(--ui-text)' }}>
+              超级插队5元
+            </h3>
+            <p className="mt-1 text-sm font-semibold" style={{ color: 'var(--ui-accent)' }}>
+              {cutInSucceeded
+                ? '已抢占时段，请扫码支付 ¥5'
+                : CUT_IN_QR_CAPTION}
+            </p>
+            <p className="mt-1 text-[11px]" style={{ color: 'var(--ui-muted)' }}>
+              车牌 {vehicle.plate} ·{' '}
+              {cutInSucceeded ? '已抢占' : '正在抢占'}
+              {cutInTargetPeriod ? PERIOD_LABELS[cutInTargetPeriod] : '当前'}
+              时段 · 请用支付宝扫码支付
+            </p>
+            <div
+              className="mt-4 overflow-hidden rounded-2xl"
+              style={{ border: '1px solid var(--ui-border)', background: '#fff' }}
+            >
+              <img
+                src={asset('/pay/alipay-cut-in-5.png')}
+                alt="支付宝收款码 · 超级插队5元"
+                className="mx-auto block w-full max-w-[260px]"
+                draggable={false}
+              />
+            </div>
+            {cutInError && (
+              <div
+                className="mt-3 rounded-2xl px-3 py-2.5"
+                style={{
+                  background: 'color-mix(in srgb, #ef4444 10%, transparent)',
+                  border: '1px solid color-mix(in srgb, #ef4444 35%, transparent)',
+                }}
+              >
+                <p className="text-[12px] font-bold leading-snug" style={{ color: '#b91c1c' }}>
+                  {cutInError}
+                </p>
+                <button
+                  type="button"
+                  disabled={cutInBusy || confirming || !cutInTargetPeriod}
+                  onClick={() => {
+                    if (!cutInTargetPeriod) return
+                    setCutInError(null)
+                    setCutInSucceeded(false)
+                    setCutInBusy(true)
+                    void onCutIn(vehicle, cutInTargetPeriod)
+                      .then((res) => {
+                        if (!res.ok) {
+                          setCutInSucceeded(false)
+                          setCutInError(res.reason || '插队失败，请稍后重试')
+                        } else {
+                          setCutInError(null)
+                          setCutInSucceeded(true)
+                        }
+                      })
+                      .finally(() => setCutInBusy(false))
+                  }}
+                  className="mt-2 w-full rounded-xl py-2 text-[13px] font-black disabled:opacity-60"
+                  style={{
+                    background: 'color-mix(in srgb, #ef4444 18%, #fff)',
+                    color: '#b91c1c',
+                    border: '1px solid color-mix(in srgb, #ef4444 40%, transparent)',
+                  }}
+                >
+                  {cutInBusy ? '重试中…' : '重新登记插队'}
+                </button>
+              </div>
+            )}
+            {!cutInError && cutInBusy && (
+              <p className="mt-3 text-center text-[11px] font-semibold" style={{ color: 'var(--ui-muted)' }}>
+                正在为你抢占时段…
+              </p>
+            )}
+            {!cutInError && cutInSucceeded && !cutInBusy && (
+              <p className="mt-3 text-center text-[12px] font-bold" style={{ color: 'var(--ui-accent)' }}>
+                已抢占时段，请扫码支付 ¥5
+              </p>
+            )}
+            <button
+              type="button"
+              onClick={closeCutInQr}
+              className="mt-4 w-full rounded-2xl py-2.5 text-sm font-bold"
+              style={{
+                background: 'var(--ui-tile, #f4f4f5)',
+                color: 'var(--ui-text)',
+                border: '1px solid var(--ui-border)',
+              }}
+            >
+              已支付 / 关闭
+            </button>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  )
+
   return (
-    <AnimatePresence onExitComplete={onExited}>
-      {open && (
-        <>
+    <>
+      <AnimatePresence onExitComplete={onExited}>
+        {open && (
+          <>
+
           <motion.button
             type="button"
             aria-label="关闭遮罩"
@@ -453,15 +606,18 @@ export function BookingDrawer({
                       }
                       setCutInTargetPeriod(target)
                       setCutInError(null)
-                      setCutInOpen(true)
+                      setCutInSucceeded(false)
+                      setCutInOpen(true) // show QR immediately; API runs in background
                       setCutInBusy(true)
                       void onCutIn(vehicle, target)
                         .then((res) => {
                           if (!res.ok) {
                             // Keep QR open; soft inline error + retry on sheet (no toast).
+                            setCutInSucceeded(false)
                             setCutInError(res.reason || '插队失败，请稍后重试')
                           } else {
                             setCutInError(null)
+                            setCutInSucceeded(true)
                           }
                         })
                         .finally(() => setCutInBusy(false))
@@ -563,117 +719,10 @@ export function BookingDrawer({
             </div>
           </motion.div>
 
-          <AnimatePresence>
-            {cutInOpen && (
-              <motion.div
-                className="fixed inset-0 z-[70] flex items-end justify-center bg-black/45 px-3 pb-6 sm:items-center"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.18 }}
-                onClick={() => {
-                  setCutInOpen(false)
-                  setCutInTargetPeriod(null)
-                  setCutInError(null)
-                }}
-              >
-                <motion.div
-                  role="dialog"
-                  aria-label="超级插队支付"
-                  aria-modal
-                  className="w-full max-w-sm rounded-3xl p-5 shadow-2xl"
-                  style={{
-                    background: 'var(--ui-shell-top, #ffffff)',
-                    border: '1px solid var(--ui-border)',
-                  }}
-                  initial={{ y: 24, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  exit={{ y: 16, opacity: 0 }}
-                  transition={{ duration: 0.18, ease: 'easeOut' }}
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <h3 className="text-lg font-black" style={{ color: 'var(--ui-text)' }}>
-                    超级插队5元
-                  </h3>
-                  <p className="mt-1 text-sm font-semibold" style={{ color: 'var(--ui-accent)' }}>
-                    {CUT_IN_QR_CAPTION}
-                  </p>
-                  <p className="mt-1 text-[11px]" style={{ color: 'var(--ui-muted)' }}>
-                    车牌 {vehicle.plate} · 已为你抢占
-                    {cutInTargetPeriod ? PERIOD_LABELS[cutInTargetPeriod] : '当前'}
-                    时段 · 请用支付宝扫码支付
-                  </p>
-                  <div
-                    className="mt-4 overflow-hidden rounded-2xl"
-                    style={{ border: '1px solid var(--ui-border)', background: '#fff' }}
-                  >
-                    <img
-                      src={asset('/pay/alipay-cut-in-5.png')}
-                      alt="支付宝收款码 · 超级插队5元"
-                      className="mx-auto block w-full max-w-[260px]"
-                      draggable={false}
-                    />
-                  </div>
-                  {cutInError && (
-                    <div className="mt-3 rounded-2xl px-3 py-2.5" style={{ background: 'color-mix(in srgb, #ef4444 10%, transparent)', border: '1px solid color-mix(in srgb, #ef4444 35%, transparent)' }}>
-                      <p className="text-[12px] font-bold leading-snug" style={{ color: '#b91c1c' }}>
-                        {cutInError}
-                      </p>
-                      <button
-                        type="button"
-                        disabled={cutInBusy || confirming || !cutInTargetPeriod}
-                        onClick={() => {
-                          if (!cutInTargetPeriod) return
-                          setCutInError(null)
-                          setCutInBusy(true)
-                          void onCutIn(vehicle, cutInTargetPeriod)
-                            .then((res) => {
-                              if (!res.ok) {
-                                setCutInError(res.reason || '插队失败，请稍后重试')
-                              } else {
-                                setCutInError(null)
-                              }
-                            })
-                            .finally(() => setCutInBusy(false))
-                        }}
-                        className="mt-2 w-full rounded-xl py-2 text-[13px] font-black disabled:opacity-60"
-                        style={{
-                          background: 'color-mix(in srgb, #ef4444 18%, #fff)',
-                          color: '#b91c1c',
-                          border: '1px solid color-mix(in srgb, #ef4444 40%, transparent)',
-                        }}
-                      >
-                        {cutInBusy ? '重试中…' : '重新登记插队'}
-                      </button>
-                    </div>
-                  )}
-                  {!cutInError && cutInBusy && (
-                    <p className="mt-3 text-center text-[11px] font-semibold" style={{ color: 'var(--ui-muted)' }}>
-                      正在为你抢占时段…
-                    </p>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setCutInOpen(false)
-                      setCutInTargetPeriod(null)
-                      setCutInError(null)
-                    }}
-                    className="mt-4 w-full rounded-2xl py-2.5 text-sm font-bold"
-                    style={{
-                      background: 'var(--ui-tile, #f4f4f5)',
-                      color: 'var(--ui-text)',
-                      border: '1px solid var(--ui-border)',
-                    }}
-                  >
-                    已支付 / 关闭
-                  </button>
-                </motion.div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </>
-      )}
-    </AnimatePresence>
+          </>
+        )}
+      </AnimatePresence>
+      {typeof document !== 'undefined' ? createPortal(cutInQrOverlay, document.body) : null}
+    </>
   )
 }

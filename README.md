@@ -14,7 +14,7 @@
 
 - Pages：https://aaronyang0628.github.io/charge-spot-quest/  
   （国内可能较慢；生产静态站建议 OSS/CDN 或集群 Ingress。）
-- 镜像：`ghcr.io/aaronyang0628/charge-spot-quest:0.1.10`（另有 `latest`、`0.1.0`；含前端 UI + API）  
+- 镜像：`ghcr.io/aaronyang0628/charge-spot-quest:0.1.11`（另有 `latest`、`0.1.0`；含前端 UI + API）  
   https://github.com/users/AaronYang0628/packages/container/package/charge-spot-quest
 
 ## UX
@@ -56,9 +56,9 @@ STATIC_DIR="$(pwd)/dist" uvicorn app.main:app --app-dir server --host 0.0.0.0 --
 
 ## Deploy — Helm / k3s（给其他 agent）
 
-用仓库 chart [`charts/charge-spot-quest`](charts/charge-spot-quest) 部署 **UI + API**（同镜像）。镜像默认 `ghcr.io/aaronyang0628/charge-spot-quest:0.1.10`。Ingress `/` 出前端，`/api` 为 API；探针对 `/health`、`/readyz` 默认开启。
+用仓库 chart [`charts/charge-spot-quest`](charts/charge-spot-quest) 部署 **UI + API**（同镜像）。镜像默认 `ghcr.io/aaronyang0628/charge-spot-quest:0.1.11`。Ingress `/` 出前端，`/api` 为 API；探针对 `/health`、`/readyz` 默认开启。
 
-> **Agent handoff：** 拉 `0.1.10`/`latest` 后 `kubectl -n charge-spot rollout restart deploy/charge-spot-quest`（或 helm upgrade 改 tag）；打开 Ingress 根路径应是 HTML 应用，不再是 `{"detail":"Not Found"}`。
+> **Agent handoff：** 拉 `0.1.11`/`latest` 后 `kubectl -n charge-spot rollout restart deploy/charge-spot-quest`（或 helm upgrade 改 tag）；打开 Ingress 根路径应是 HTML 应用，不再是 `{"detail":"Not Found"}`。
 
 **禁止**把真实域名、内网 IP、密码写进公开 values；用 `charge-spot.example.com`、`pg.example.com`，密钥用集群 Secret。
 
@@ -76,7 +76,7 @@ STATIC_DIR="$(pwd)/dist" uvicorn app.main:app --app-dir server --host 0.0.0.0 --
 helm upgrade --install charge-spot-quest ./charts/charge-spot-quest \
   -n charge-spot --create-namespace \
   --set image.repository=ghcr.io/aaronyang0628/charge-spot-quest \
-  --set image.tag=0.1.10 \
+  --set image.tag=0.1.11 \
   --set postgresql.enabled=false \
   --set sqlite.enabled=true
 ```
@@ -89,7 +89,7 @@ helm upgrade --install charge-spot-quest ./charts/charge-spot-quest \
 helm upgrade --install charge-spot-quest ./charts/charge-spot-quest \
   -n charge-spot --create-namespace \
   --set image.repository=ghcr.io/aaronyang0628/charge-spot-quest \
-  --set image.tag=0.1.10 \
+  --set image.tag=0.1.11 \
   --set postgresql.enabled=true \
   --set postgresql.auth.password="$(openssl rand -hex 16)"
 ```
@@ -105,7 +105,7 @@ kubectl -n charge-spot create secret generic charge-spot-db \
 helm upgrade --install charge-spot-quest ./charts/charge-spot-quest \
   -n charge-spot --create-namespace \
   --set image.repository=ghcr.io/aaronyang0628/charge-spot-quest \
-  --set image.tag=0.1.10 \
+  --set image.tag=0.1.11 \
   --set postgresql.enabled=false \
   --set sqlite.enabled=false \
   --set externalDatabase.host=pg.example.com \
@@ -118,7 +118,7 @@ helm upgrade --install charge-spot-quest ./charts/charge-spot-quest \
 
 ### DingTalk 通知（可选）
 
-预约成功后若同时设置 `DINGTALK_WEBHOOK_URL` 与 `DINGTALK_SEC_SECRET`（加签），API 会向钉钉发文本通知；缺 SEC 则跳过；失败只打日志，不影响预约。**不要**把真实 token/SEC 提交进 git；集群用 Secret / `extraEnv` valueFrom，见 [charts/charge-spot-quest/README.md](charts/charge-spot-quest/README.md)。
+普通预约与**超级插队**成功后，若同时设置 `DINGTALK_WEBHOOK_URL` 与 `DINGTALK_SEC_SECRET`（加签），API 会向钉钉发文本；缺 SEC 则跳过；失败只打日志，不影响业务。默认 chart `extraEnv: []`，**集群需两步**：`kubectl create secret` + `helm upgrade --set-json extraEnv=...`。**不要**把真实 token/SEC 提交进 git；细则与占位命令见 [charts/charge-spot-quest/README.md](charts/charge-spot-quest/README.md)。
 
 ### 自检
 
