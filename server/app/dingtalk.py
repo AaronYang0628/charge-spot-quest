@@ -94,6 +94,7 @@ def format_booking_text(
     *,
     kind: str = "booking",
     revoke_url: str | None = None,
+    note: str | None = None,
 ) -> str:
     spot = SPOT_LABELS.get(booking.spotId, booking.spotId)
     period = PERIOD_CN.get(booking.period, booking.period)
@@ -103,6 +104,12 @@ def format_booking_text(
         title = "【邻里充电】超级插队"
     elif kind == "cut_in_cancel":
         title = "【邻里充电】取消插队"
+    elif kind == "cut_in_revoked":
+        title = "【邻里充电】插队已撤销 · 车主占用已恢复"
+    elif kind == "cut_in_already_revoked":
+        title = "【邻里充电】此前已撤销 · 车主占用已是当前状态"
+    elif kind == "cut_in_revoke_failed":
+        title = "【邻里充电】插队撤销失败"
     else:
         title = "【邻里充电】新预约"
     lines = [
@@ -113,6 +120,8 @@ def format_booking_text(
         f"车牌:{booking.vehicle.plate}",
         f"车型/颜色:{vtype}/{color}",
     ]
+    if note:
+        lines.append(f"说明:{note}")
     if revoke_url and kind in ("cut_in", "cut_in_cancel"):
         lines.append("")
         lines.append("若未收到支付宝¥5，可点此撤销插队并恢复车主占用：")
@@ -134,19 +143,13 @@ def signed_webhook_url(webhook_url: str, sec_secret: str, *, now_ms: int | None 
     return f"{webhook_url}{sep}timestamp={timestamp}&sign={sign}"
 
 
-def notify_booking(
+def _post_dingtalk_text(
     webhook_url: str | None,
-    booking: Booking,
+    content: str,
     *,
     sec_secret: str | None = None,
-    kind: str = "booking",
-    revoke_url: str | None = None,
 ) -> None:
-    """POST text message to DingTalk custom robot. Never raises to caller.
-
-    Requires both DINGTALK_WEBHOOK_URL and DINGTALK_SEC_SECRET. If webhook is
-    set but SEC is missing, log a warning and skip.
-    """
+    """POST a text message. Never raises. Skip quietly if env unset."""
     url = (webhook_url or "").strip()
     if not url:
         return
@@ -154,10 +157,7 @@ def notify_booking(
     if not secret:
         logger.warning("DingTalk notify skipped: DINGTALK_SEC_SECRET not set")
         return
-    payload = {
-        "msgtype": "text",
-        "text": {"content": format_booking_text(booking, kind=kind, revoke_url=revoke_url)},
-    }
+    payload = {"msgtype": "text", "text": {"content": content}}
     try:
         signed = signed_webhook_url(url, secret)
         with httpx.Client(timeout=5.0) as client:
@@ -181,6 +181,37 @@ def notify_booking(
                     )
     except Exception as exc:  # noqa: BLE001
         logger.warning("DingTalk notify failed: %s", exc)
+
+
+def notify_booking(
+    webhook_url: str | None,
+    booking: Booking,
+    *,
+    sec_secret: str | None = None,
+    kind: str = "booking",
+    revoke_url: str | None = None,
+    note: str | None = None,
+) -> None:
+    """POST text message to DingTalk custom robot. Never raises to caller.
+
+    Requires both DINGTALK_WEBHOOK_URL and DINGTALK_SEC_SECRET. If webhook is
+    set but SEC is missing, log a warning and skip.
+    """
+    _post_dingtalk_text(
+        webhook_url,
+        format_booking_text(booking, kind=kind, revoke_url=revoke_url, note=note),
+        sec_secret=sec_secret,
+    )
+
+
+def notify_text(
+    webhook_url: str | None,
+    content: str,
+    *,
+    sec_secret: str | None = None,
+) -> None:
+    """POST free-form text (e.g. revoke failure without a booking row)."""
+    _post_dingtalk_text(webhook_url, content, sec_secret=sec_secret)
 
 
 def maybe_revoke_url(

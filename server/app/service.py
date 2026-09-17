@@ -357,7 +357,12 @@ def revoke_cut_in(db: Session, booking_id: str) -> BookResult:
     if jumper is None:
         return BookResult(ok=False, reason="找不到该插队预约")
     if jumper.cancelled:
-        return BookResult(ok=True, reason="已撤销插队，车主占用已恢复")
+        # Idempotent: already revoked/cancelled — still return booking for notify.
+        return BookResult(
+            ok=True,
+            reason="此前已撤销，车主占用已是当前状态",
+            booking=_row_to_booking(jumper),
+        )
 
     jumper.cancelled = True
     jumper.cancel_reason = "host_revoke"

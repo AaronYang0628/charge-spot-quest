@@ -598,13 +598,42 @@ def test_cancel_cut_in_restores_host_and_notifies(client, monkeypatch):
     assert again.json()["ok"] is True
 
 
-def test_revoke_cut_in_signed_link(client):
+def test_revoke_cut_in_signed_link(client, monkeypatch):
     from app.timeutil import current_idle_period, today_iso
     from app.host_plates import HOST_PLATES
     from app.dingtalk import build_revoke_url
 
+    calls = []
+
+    class FakeResponse:
+        status_code = 200
+
+        def json(self):
+            return {"errcode": 0}
+
+    class FakeClient:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return False
+
+        def post(self, url, json=None):
+            calls.append({"url": url, "json": json})
+            return FakeResponse()
+
     client.app.state.settings.public_base_url = "https://charge-spot.example.com"
     client.app.state.settings.cut_in_revoke_secret = "revoke-test-secret"
+    client.app.state.settings.dingtalk_webhook_url = (
+        "https://oapi.dingtalk.com/robot/send?access_token=test-token-only"
+    )
+    client.app.state.settings.dingtalk_sec_secret = "SEC000testsecret"
+    import app.dingtalk as dingtalk
+
+    monkeypatch.setattr(dingtalk.httpx, "Client", FakeClient)
 
     today = today_iso()
     period = current_idle_period()
@@ -631,12 +660,14 @@ def test_revoke_cut_in_signed_link(client):
     )
     assert cut.json()["ok"] is True
     booking_id = cut.json()["booking"]["id"]
+    calls.clear()  # ignore cut-in notify; assert revoke only
 
     bad = client.get(
         "/api/cut-in/revoke",
         params={"bookingId": booking_id, "exp": 9999999999, "sig": "deadbeef"},
     )
     assert bad.status_code == 403
+    assert calls == []  # invalid sig: no DingTalk spam
 
     url = build_revoke_url(
         "https://charge-spot.example.com",
@@ -652,15 +683,25 @@ def test_revoke_cut_in_signed_link(client):
     assert "已撤销插队" in ok.text
     assert "车主占用已恢复" in ok.text
 
+    assert len(calls) == 1
+    revoked_text = calls[0]["json"]["text"]["content"]
+    assert "插队已撤销" in revoked_text
+    assert "车主占用已恢复" in revoked_text
+    assert "沪C77777" in revoked_text
+
     today_rows = client.get("/api/bookings/today").json()
     period_rows = [row for row in today_rows if row["spotId"] == "C" and row["period"] == period]
     assert any(row["status"] == "booked" and row["isHost"] for row in period_rows)
     assert not any(row["status"] == "cut_in_replaced" for row in period_rows)
 
-    # Idempotent second click
+    # Idempotent second click — success-style ack, not failure spam
     again = client.get(parsed.path + "?" + parsed.query)
     assert again.status_code == 200
     assert "已撤销插队" in again.text
+    assert len(calls) == 2
+    already_text = calls[1]["json"]["text"]["content"]
+    assert "此前已撤销" in already_text
+    assert "车主占用已是当前状态" in already_text
 
 
 def test_revoke_sig_helpers():

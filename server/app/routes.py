@@ -19,7 +19,7 @@ from app.schemas import (
     TimePeriod,
 )
 from app import service
-from app.dingtalk import maybe_revoke_url, notify_booking, verify_revoke_sig
+from app.dingtalk import maybe_revoke_url, notify_booking, notify_text, verify_revoke_sig
 from app.seed import reset_and_seed
 
 health_router = APIRouter(tags=["health"])
@@ -192,9 +192,41 @@ def revoke_cut_in_link(
         html = REVOKE_ERR_HTML.replace("__REASON__", "链接无效或已过期，请联系管理员。")
         return HTMLResponse(content=html, status_code=403)
     result = service.revoke_cut_in(db, bookingId)
+    webhook = getattr(settings, "dingtalk_webhook_url", None)
+    sec = getattr(settings, "dingtalk_sec_secret", None)
+    if result.ok and result.booking is not None:
+        reason = result.reason or ""
+        kind = (
+            "cut_in_already_revoked"
+            if ("此前已撤销" in reason or "已是当前状态" in reason)
+            else "cut_in_revoked"
+        )
+        notify_booking(webhook, result.booking, sec_secret=sec, kind=kind)
+        return HTMLResponse(content=REVOKE_OK_HTML, status_code=200)
     if not result.ok:
+        if result.booking is not None:
+            notify_booking(
+                webhook,
+                result.booking,
+                sec_secret=sec,
+                kind="cut_in_revoke_failed",
+                note=result.reason,
+            )
+        else:
+            notify_text(
+                webhook,
+                "\n".join(
+                    [
+                        "【邻里充电】插队撤销失败",
+                        f"预约:{bookingId}",
+                        f"说明:{result.reason or '撤销失败，请稍后重试。'}",
+                    ]
+                ),
+                sec_secret=sec,
+            )
         html = REVOKE_ERR_HTML.replace("__REASON__", result.reason or "撤销失败，请稍后重试。")
         return HTMLResponse(content=html, status_code=400)
+    # ok but no booking (should be rare) — still show success page
     return HTMLResponse(content=REVOKE_OK_HTML, status_code=200)
 
 

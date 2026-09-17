@@ -245,7 +245,9 @@ export function BookingDrawer({
   }
 
   const onPaidSuccess = () => {
+    // Close pay sheet + booking drawer so no overlay remains.
     closeCutInQr()
+    onClose()
   }
 
   const onCancelCutInClick = () => {
@@ -258,6 +260,7 @@ export function BookingDrawer({
           return
         }
         closeCutInQr()
+        onClose()
         onToast?.('已取消插队，车主占用已恢复', true)
       })
       .finally(() => setCancelBusy(false))
