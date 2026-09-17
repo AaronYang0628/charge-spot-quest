@@ -15,7 +15,7 @@ image:
   # Placeholder until a real API image exists. Override at install time.
   # 占位镜像；发布真实 API 后用 --set image.repository/tag 覆盖。
   repository: ghcr.io/aaronyang0628/charge-spot-quest
-  tag: "0.1.7"
+  tag: "0.1.8"
   digest: ""
   pullPolicy: IfNotPresent
 

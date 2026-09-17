@@ -13,8 +13,7 @@ import {
   addDaysISO,
   formatHugeDate,
   maxBookingISO,
-  todayISO,
-} from '../lib/time'
+  todayISO,, currentIdlePeriod } from '../lib/time'
 import { loadPlateHistory, type PlateHistoryEntry } from '../lib/plateHistory'
 import {
   CUT_IN_NEED_HOST_PERIOD,
@@ -181,12 +180,16 @@ export function BookingDrawer({
           isHostCutInAvailable({ period: p, todayBookings }),
         )
       : []
-  const showCutIn = date === today && hostTakenPeriods.length > 0
-
+  const clockPeriod = currentIdlePeriod()
+  // Only show cut-in when the selected period is host-held, or (nothing selected)
+  // the *current* Shanghai period is host-held. A free noon must not show the
+  // button just because evening is host-seeded.
   const resolveCutInPeriod = (): TimePeriod | null => {
     if (period && hostTakenPeriods.includes(period)) return period
-    return hostTakenPeriods[0] ?? null
+    if (!period && hostTakenPeriods.includes(clockPeriod)) return clockPeriod
+    return null
   }
+  const showCutIn = date === today && resolveCutInPeriod() !== null
 
   return (
     <AnimatePresence onExitComplete={onExited}>
