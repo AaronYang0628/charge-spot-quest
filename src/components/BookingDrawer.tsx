@@ -13,7 +13,9 @@ import {
   addDaysISO,
   formatHugeDate,
   maxBookingISO,
-  todayISO,, currentIdlePeriod } from '../lib/time'
+  todayISO,
+  currentIdlePeriod
+} from '../lib/time'
 import { loadPlateHistory, type PlateHistoryEntry } from '../lib/plateHistory'
 import {
   CUT_IN_NEED_HOST_PERIOD,
