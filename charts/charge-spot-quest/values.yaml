@@ -15,7 +15,7 @@ image:
   # Placeholder until a real API image exists. Override at install time.
   # 占位镜像；发布真实 API 后用 --set image.repository/tag 覆盖。
   repository: ghcr.io/aaronyang0628/charge-spot-quest
-  tag: "0.1.12"
+  tag: "0.1.13"
   digest: ""
   pullPolicy: IfNotPresent
 
@@ -56,34 +56,29 @@ env:
   APP_PORT: "8080"
   LOG_LEVEL: INFO
 
-# Optional runtime env (DingTalk + cut-in revoke). Do NOT put real secrets in git.
-# Needs BOTH DINGTALK_WEBHOOK_URL and DINGTALK_SEC_SECRET (加签). Prefer Secret + valueFrom.
-# For host revoke links in DingTalk messages, also set:
-#   PUBLIC_BASE_URL          — Ingress origin, no trailing slash (e.g. https://charge-spot.example.com)
-#   CUT_IN_REVOKE_SECRET     — HMAC secret for GET /api/cut-in/revoke
-# extraEnv:
-#   - name: DINGTALK_WEBHOOK_URL
-#     valueFrom:
-#       secretKeyRef:
-#         name: charge-spot-dingtalk
-#         key: webhook_url
-#   - name: DINGTALK_SEC_SECRET
-#     valueFrom:
-#       secretKeyRef:
-#         name: charge-spot-dingtalk
-#         key: sec_secret
-#   - name: PUBLIC_BASE_URL
-#     value: "https://charge-spot.example.com"
-#   - name: CUT_IN_REVOKE_SECRET
-#     valueFrom:
-#       secretKeyRef:
-#         name: charge-spot-dingtalk
-#         key: revoke_secret
-# Example Secret (create on cluster only — placeholders only in git):
+# -----------------------------------------------------------------------------
+# DingTalk notifications + cut-in revoke links (optional)
+# -----------------------------------------------------------------------------
+# Prefer dingtalk.* over extraEnv. Create the Secret on the cluster only —
+# never put real webhook / SEC / revoke tokens in values committed to git.
+# Secret keys: webhook_url, sec_secret, revoke_secret
+#
 #   kubectl -n charge-spot create secret generic charge-spot-dingtalk \
 #     --from-literal=webhook_url='https://oapi.dingtalk.com/robot/send?access_token=YOUR_TOKEN' \
 #     --from-literal=sec_secret='SECxxxxxxxxxxxx' \
-#     --from-literal=revoke_secret='openssl-rand-hex-32-placeholder'
+#     --from-literal=revoke_secret="$(openssl rand -hex 32)"
+#
+#   helm ... --set dingtalk.enabled=true \
+#     --set dingtalk.existingSecret=charge-spot-dingtalk \
+#     --set dingtalk.publicBaseUrl=https://charge-spot.example.com
+dingtalk:
+  enabled: false
+  # Required when enabled. Secret must have keys: webhook_url, sec_secret, revoke_secret
+  existingSecret: ""
+  # Required when enabled. Ingress origin, no trailing slash (for revoke URLs in messages)
+  publicBaseUrl: ""
+
+# Escape hatch for ad-hoc env. Prefer dingtalk.* for DingTalk / cut-in revoke.
 extraEnv: []
 extraEnvFrom: []
 

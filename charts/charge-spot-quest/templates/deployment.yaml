@@ -10,6 +10,14 @@
 {{- if and (not .Values.postgresql.enabled) (not .Values.sqlite.enabled) (empty .Values.externalDatabase.host) (empty .Values.externalDatabase.existingSecret) }}
 {{- fail "When postgresql.enabled is false: set sqlite.enabled=true, or externalDatabase.host / existingSecret" }}
 {{- end }}
+{{- if .Values.dingtalk.enabled }}
+{{- if empty .Values.dingtalk.existingSecret }}
+{{- fail "dingtalk.existingSecret is required when dingtalk.enabled is true (Secret keys: webhook_url, sec_secret, revoke_secret)" }}
+{{- end }}
+{{- if empty .Values.dingtalk.publicBaseUrl }}
+{{- fail "dingtalk.publicBaseUrl is required when dingtalk.enabled is true (Ingress origin, no trailing slash — used for cut-in revoke links)" }}
+{{- end }}
+{{- end }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -70,9 +78,30 @@ spec:
           {{- with .Values.extraEnvFrom }}
             {{- toYaml . | nindent 12 }}
           {{- end }}
-          {{- with .Values.extraEnv }}
+          {{- if or .Values.dingtalk.enabled .Values.extraEnv }}
           env:
+            {{- if .Values.dingtalk.enabled }}
+            - name: DINGTALK_WEBHOOK_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.dingtalk.existingSecret | quote }}
+                  key: webhook_url
+            - name: DINGTALK_SEC_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.dingtalk.existingSecret | quote }}
+                  key: sec_secret
+            - name: CUT_IN_REVOKE_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.dingtalk.existingSecret | quote }}
+                  key: revoke_secret
+            - name: PUBLIC_BASE_URL
+              value: {{ .Values.dingtalk.publicBaseUrl | quote }}
+            {{- end }}
+            {{- with .Values.extraEnv }}
             {{- toYaml . | nindent 12 }}
+            {{- end }}
           {{- end }}
           {{- if .Values.livenessProbe.enabled }}
           livenessProbe:
