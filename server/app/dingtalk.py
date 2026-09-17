@@ -7,7 +7,7 @@ import hashlib
 import hmac
 import logging
 import time
-from urllib.parse import quote_plus
+from urllib.parse import quote, quote_plus
 
 import httpx
 
@@ -37,21 +37,87 @@ COLOR_CN = {
 }
 SPOT_LABELS = {"A": "647", "B": "648", "C": "649"}
 
+# Signed revoke links stay valid long enough for host Alipay offline check.
+REVOKE_TTL_SEC = 72 * 3600
 
-def format_booking_text(booking: Booking, *, kind: str = "booking") -> str:
+
+def build_revoke_url(
+    public_base_url: str,
+    revoke_secret: str,
+    booking_id: str,
+    *,
+    ttl_sec: int = REVOKE_TTL_SEC,
+    now: int | None = None,
+) -> str:
+    """HMAC-signed GET /api/cut-in/revoke URL for DingTalk (markdown/text)."""
+    base = public_base_url.strip().rstrip("/")
+    exp = int(now if now is not None else time.time()) + ttl_sec
+    msg = f"{booking_id}.{exp}"
+    sig = hmac.new(
+        revoke_secret.encode("utf-8"),
+        msg.encode("utf-8"),
+        digestmod=hashlib.sha256,
+    ).hexdigest()
+    return (
+        f"{base}/api/cut-in/revoke"
+        f"?bookingId={quote(booking_id, safe='')}"
+        f"&exp={exp}&sig={sig}"
+    )
+
+
+def verify_revoke_sig(
+    revoke_secret: str,
+    booking_id: str,
+    exp: int,
+    sig: str,
+    *,
+    now: int | None = None,
+) -> bool:
+    """Return True if sig matches and exp is still in the future."""
+    secret = (revoke_secret or "").strip()
+    if not secret or not booking_id or not sig:
+        return False
+    ts = int(now if now is not None else time.time())
+    if exp < ts:
+        return False
+    msg = f"{booking_id}.{exp}"
+    expected = hmac.new(
+        secret.encode("utf-8"),
+        msg.encode("utf-8"),
+        digestmod=hashlib.sha256,
+    ).hexdigest()
+    return hmac.compare_digest(expected, sig)
+
+
+def format_booking_text(
+    booking: Booking,
+    *,
+    kind: str = "booking",
+    revoke_url: str | None = None,
+) -> str:
     spot = SPOT_LABELS.get(booking.spotId, booking.spotId)
     period = PERIOD_CN.get(booking.period, booking.period)
     vtype = TYPE_CN.get(booking.vehicle.type, booking.vehicle.type)
     color = COLOR_CN.get(booking.vehicle.color, booking.vehicle.color)
-    title = "【邻里充电】超级插队" if kind == "cut_in" else "【邻里充电】新预约"
-    return (
-        f"{title}\n"
-        f"车位:{spot}\n"
-        f"日期:{booking.date}\n"
-        f"时段:{period}\n"
-        f"车牌:{booking.vehicle.plate}\n"
-        f"车型/颜色:{vtype}/{color}"
-    )
+    if kind == "cut_in":
+        title = "【邻里充电】超级插队"
+    elif kind == "cut_in_cancel":
+        title = "【邻里充电】取消插队"
+    else:
+        title = "【邻里充电】新预约"
+    lines = [
+        title,
+        f"车位:{spot}",
+        f"日期:{booking.date}",
+        f"时段:{period}",
+        f"车牌:{booking.vehicle.plate}",
+        f"车型/颜色:{vtype}/{color}",
+    ]
+    if revoke_url and kind in ("cut_in", "cut_in_cancel"):
+        lines.append("")
+        lines.append("若未收到支付宝¥5，可点此撤销插队并恢复车主占用：")
+        lines.append(revoke_url)
+    return "\n".join(lines)
 
 
 def signed_webhook_url(webhook_url: str, sec_secret: str, *, now_ms: int | None = None) -> str:
@@ -74,6 +140,7 @@ def notify_booking(
     *,
     sec_secret: str | None = None,
     kind: str = "booking",
+    revoke_url: str | None = None,
 ) -> None:
     """POST text message to DingTalk custom robot. Never raises to caller.
 
@@ -87,7 +154,10 @@ def notify_booking(
     if not secret:
         logger.warning("DingTalk notify skipped: DINGTALK_SEC_SECRET not set")
         return
-    payload = {"msgtype": "text", "text": {"content": format_booking_text(booking, kind=kind)}}
+    payload = {
+        "msgtype": "text",
+        "text": {"content": format_booking_text(booking, kind=kind, revoke_url=revoke_url)},
+    }
     try:
         signed = signed_webhook_url(url, secret)
         with httpx.Client(timeout=5.0) as client:
@@ -111,3 +181,15 @@ def notify_booking(
                     )
     except Exception as exc:  # noqa: BLE001
         logger.warning("DingTalk notify failed: %s", exc)
+
+
+def maybe_revoke_url(
+    public_base_url: str | None,
+    revoke_secret: str | None,
+    booking_id: str,
+) -> str | None:
+    base = (public_base_url or "").strip()
+    secret = (revoke_secret or "").strip()
+    if not base or not secret:
+        return None
+    return build_revoke_url(base, secret, booking_id)

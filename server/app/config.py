@@ -31,6 +31,12 @@ class Settings(BaseSettings):
     # DingTalk 加签 secret (SEC). Required together with webhook URL.
     dingtalk_sec_secret: str | None = None
 
+    # Public Ingress origin for signed cut-in revoke links (no trailing slash).
+    # Example: https://charge-spot.example.com
+    public_base_url: str | None = None
+    # HMAC secret for GET /api/cut-in/revoke signatures. Never commit the real value.
+    cut_in_revoke_secret: str | None = None
+
     # Comma-separated origins; empty / * → allow all (local Vite + same-origin later).
     cors_origins: str = "*"
 

@@ -16,6 +16,7 @@ from app.plate import mask_plate
 from app.schemas import (
     Booking,
     BookResult,
+    CancelCutInBody,
     CreateBookingBody,
     CutInBookingBody,
     SpotBookingView,
@@ -300,3 +301,85 @@ def create_cut_in(db: Session, body: CutInBookingBody) -> BookResult:
         return BookResult(ok=False, reason="插队失败，请稍后重试")
     db.refresh(row)
     return BookResult(ok=True, reason="超级插队已登记", booking=_row_to_booking(row))
+
+def _restore_host_after_cut_in(db: Session, jumper: BookingRow) -> BookingRow | None:
+    """Cancel jumper (caller sets fields) and restore the superseded host row."""
+    host = db.scalar(
+        select(BookingRow).where(
+            BookingRow.superseded_by == jumper.id,
+            BookingRow.cancel_reason == "cut_in",
+        )
+    )
+    if host is None:
+        return None
+    host.cancelled = False
+    host.cancel_reason = None
+    host.superseded_by = None
+    return host
+
+
+def cancel_cut_in(db: Session, body: CancelCutInBody) -> BookResult:
+    """User cancels their own cut-in booking and restores the host occupancy."""
+    jumper = db.get(BookingRow, body.bookingId)
+    if jumper is None:
+        return BookResult(ok=False, reason="找不到该插队预约")
+    if jumper.session_id != body.sessionId:
+        return BookResult(ok=False, reason="只能取消自己的插队")
+    if jumper.cancelled:
+        # Idempotent: already cancelled (by user or revoke)
+        return BookResult(ok=True, reason="插队已取消，车主占用已恢复")
+
+    jumper.cancelled = True
+    jumper.cancel_reason = "user_cancel"
+    # Flush first so partial UNIQUE (active spot/date/period) sees jumper gone
+    # before host is restored — otherwise SQLite can IntegrityError mid-tx.
+    try:
+        db.flush()
+    except IntegrityError:
+        db.rollback()
+        return BookResult(ok=False, reason="取消插队失败，请稍后重试")
+    host = _restore_host_after_cut_in(db, jumper)
+    if host is None:
+        db.rollback()
+        return BookResult(ok=False, reason="找不到被插队的车主预约，无法恢复")
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        return BookResult(ok=False, reason="取消插队失败，请稍后重试")
+    db.refresh(jumper)
+    return BookResult(ok=True, reason="已取消插队，车主占用已恢复", booking=_row_to_booking(jumper))
+
+
+def revoke_cut_in(db: Session, booking_id: str) -> BookResult:
+    """Host/DingTalk signed revoke: cancel jumper + restore host. Idempotent."""
+    jumper = db.get(BookingRow, booking_id)
+    if jumper is None:
+        return BookResult(ok=False, reason="找不到该插队预约")
+    if jumper.cancelled:
+        return BookResult(ok=True, reason="已撤销插队，车主占用已恢复")
+
+    jumper.cancelled = True
+    jumper.cancel_reason = "host_revoke"
+    try:
+        db.flush()
+    except IntegrityError:
+        db.rollback()
+        return BookResult(ok=False, reason="撤销失败，请稍后重试")
+    host = _restore_host_after_cut_in(db, jumper)
+    if host is None:
+        # Jumper active but no host link — still cancel jumper so slot frees
+        try:
+            db.commit()
+        except IntegrityError:
+            db.rollback()
+            return BookResult(ok=False, reason="撤销失败，请稍后重试")
+        return BookResult(ok=True, reason="已撤销插队，车主占用已恢复", booking=_row_to_booking(jumper))
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        return BookResult(ok=False, reason="撤销失败，请稍后重试")
+    db.refresh(jumper)
+    return BookResult(ok=True, reason="已撤销插队，车主占用已恢复", booking=_row_to_booking(jumper))
+

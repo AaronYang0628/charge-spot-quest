@@ -22,6 +22,7 @@ export default function App() {
     closeDrawer,
     confirm,
     cutIn,
+    cancelCutIn,
     showToast,
     dismissResult,
     onDrawerExited, onParked, onFinished,
@@ -88,10 +89,11 @@ export default function App() {
         onClose={closeDrawer}
         onConfirm={(period, vehicle, date) => void confirm(period, vehicle, date)}
         onCutIn={(vehicle, period) => cutIn(vehicle, period)}
+        onCancelCutIn={(bookingId) => cancelCutIn(bookingId)}
         confirming={confirming}
         onExited={onDrawerExited}
         todayBookings={todayBookings}
-        onToast={(message) => showToast(false, message)}
+        onToast={(message, ok = false) => showToast(ok, message)}
       />
 
       <ResultToast

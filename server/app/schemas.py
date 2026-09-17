@@ -73,6 +73,11 @@ class CutInBookingBody(BaseModel):
     period: TimePeriod | None = None
 
 
+class CancelCutInBody(BaseModel):
+    sessionId: str = Field(min_length=1, max_length=128)
+    bookingId: str = Field(min_length=1, max_length=64)
+
+
 class BookResult(BaseModel):
     ok: bool
     reason: str | None = None

@@ -115,6 +115,35 @@ export function useAppState() {
     }
   }
 
+
+  const cancelCutIn = async (bookingId: string): Promise<BookResult> => {
+    if (busy.current) return { ok: false, reason: '请稍候' }
+    busy.current = true
+    setConfirming(true)
+    const request = generation.current
+    try {
+      const res = await api.cancelCutIn({ sessionId: state.sessionId, bookingId })
+      if (request !== generation.current) return res
+      if (!res.ok) {
+        await refresh()
+        return { ok: false, reason: res.reason || '取消插队失败，请重试' }
+      }
+      setState(s => ({
+        ...s,
+        bookings: s.bookings.filter(b => b.id !== bookingId),
+      }))
+      void refresh().catch(() => {})
+      return { ok: true, reason: res.reason || '已取消插队，车主占用已恢复', booking: res.booking }
+    } catch {
+      return { ok: false, reason: '提交失败，请检查网络后重试' }
+    } finally {
+      if (request === generation.current) {
+        setConfirming(false)
+        busy.current = false
+      }
+    }
+  }
+
   const showToast = (ok: boolean, reason: string) => {
     setResult({ ok, reason })
   }
@@ -148,6 +177,7 @@ export function useAppState() {
     openDrawer, closeDrawer: () => { if (!busy.current) setDrawerOpen(false) },
     confirm,
     cutIn,
+    cancelCutIn,
     showToast,
     onDrawerExited: () => { if (animPhase === 'closing') setAnimPhase('parking') },
     onParked: () => setAnimPhase(p => p === 'parking' ? 'charging' : p),

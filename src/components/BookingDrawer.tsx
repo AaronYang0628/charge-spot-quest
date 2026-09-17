@@ -34,11 +34,13 @@ interface Props {
   onConfirm: (period: TimePeriod, vehicle: VehicleInfo, date: string) => void
   /** Optimistic cut-in for a host-held period (defaults server-side to current idle). */
   onCutIn: (vehicle: VehicleInfo, period: TimePeriod) => Promise<BookResult>
+  /** Cancel this user's cut-in booking and restore host occupancy. */
+  onCancelCutIn: (bookingId: string) => Promise<BookResult>
   confirming?: boolean
   onExited: () => void
   /** Today's public bookings (masked) — used for host cut-in visibility. */
   todayBookings?: SpotBookingView[]
-  onToast?: (message: string) => void
+  onToast?: (message: string, ok?: boolean) => void
 }
 
 const PERIODS: TimePeriod[] = ['morning', 'noon', 'evening']
@@ -54,6 +56,7 @@ export function BookingDrawer({
   onClose,
   onConfirm,
   onCutIn,
+  onCancelCutIn,
   confirming,
   onExited,
   todayBookings = [],
@@ -74,6 +77,8 @@ export function BookingDrawer({
   const [cutInError, setCutInError] = useState<string | null>(null)
   const [cutInBusy, setCutInBusy] = useState(false)
   const [cutInSucceeded, setCutInSucceeded] = useState(false)
+  const [cutInBookingId, setCutInBookingId] = useState<string | null>(null)
+  const [cancelBusy, setCancelBusy] = useState(false)
   const sheet = useRef<HTMLDivElement>(null)
   const prevOpen = useRef(false)
   const plateInputRef = useRef<HTMLInputElement>(null)
@@ -97,6 +102,8 @@ export function BookingDrawer({
           setCutInTargetPeriod(null)
           setCutInError(null)
           setCutInSucceeded(false)
+          setCutInBookingId(null)
+          setCancelBusy(false)
           return
         }
         onClose()
@@ -135,6 +142,8 @@ export function BookingDrawer({
     setCutInError(null)
     setCutInBusy(false)
     setCutInSucceeded(false)
+    setCutInBookingId(null)
+    setCancelBusy(false)
     try {
       setPlateHistory(loadPlateHistory())
     } catch {
@@ -154,6 +163,8 @@ export function BookingDrawer({
       setCutInTargetPeriod(null)
       setCutInError(null)
       setCutInSucceeded(false)
+      setCutInBookingId(null)
+      setCancelBusy(false)
     }
     document.addEventListener('keydown', key)
     return () => document.removeEventListener('keydown', key)
@@ -229,6 +240,27 @@ export function BookingDrawer({
     setCutInTargetPeriod(null)
     setCutInError(null)
     setCutInSucceeded(false)
+    setCutInBookingId(null)
+    setCancelBusy(false)
+  }
+
+  const onPaidSuccess = () => {
+    closeCutInQr()
+  }
+
+  const onCancelCutInClick = () => {
+    if (!cutInBookingId || cancelBusy || cutInBusy) return
+    setCancelBusy(true)
+    void onCancelCutIn(cutInBookingId)
+      .then((res) => {
+        if (!res.ok) {
+          setCutInError(res.reason || '取消插队失败，请稍后重试')
+          return
+        }
+        closeCutInQr()
+        onToast?.('已取消插队，车主占用已恢复', true)
+      })
+      .finally(() => setCancelBusy(false))
   }
 
   const cutInQrOverlay = (
@@ -303,10 +335,12 @@ export function BookingDrawer({
                       .then((res) => {
                         if (!res.ok) {
                           setCutInSucceeded(false)
+                          setCutInBookingId(null)
                           setCutInError(res.reason || '插队失败，请稍后重试')
                         } else {
                           setCutInError(null)
                           setCutInSucceeded(true)
+                          setCutInBookingId(res.booking?.id ?? null)
                         }
                       })
                       .finally(() => setCutInBusy(false))
@@ -332,18 +366,34 @@ export function BookingDrawer({
                 已抢占时段，请扫码支付 ¥5
               </p>
             )}
-            <button
-              type="button"
-              onClick={closeCutInQr}
-              className="mt-4 w-full rounded-2xl py-2.5 text-sm font-bold"
-              style={{
-                background: 'var(--ui-tile, #f4f4f5)',
-                color: 'var(--ui-text)',
-                border: '1px solid var(--ui-border)',
-              }}
-            >
-              已支付 / 关闭
-            </button>
+            <div className="mt-4 flex flex-col gap-2">
+              <button
+                type="button"
+                disabled={cancelBusy || cutInBusy || !!cutInError}
+                onClick={onPaidSuccess}
+                className="w-full rounded-2xl py-2.5 text-sm font-black disabled:opacity-60"
+                style={{
+                  background: 'linear-gradient(135deg, #16a34a 0%, #15803d 100%)',
+                  color: '#fff',
+                  border: '1px solid color-mix(in srgb, #15803d 40%, transparent)',
+                }}
+              >
+                已支付成功
+              </button>
+              <button
+                type="button"
+                disabled={cancelBusy || cutInBusy || !cutInBookingId}
+                onClick={onCancelCutInClick}
+                className="w-full rounded-2xl py-2.5 text-sm font-bold disabled:opacity-60"
+                style={{
+                  background: 'var(--ui-tile, #f4f4f5)',
+                  color: 'var(--ui-text)',
+                  border: '1px solid var(--ui-border)',
+                }}
+              >
+                {cancelBusy ? '取消中…' : '取消插队'}
+              </button>
+            </div>
           </motion.div>
         </motion.div>
       )}
@@ -607,6 +657,7 @@ export function BookingDrawer({
                       setCutInTargetPeriod(target)
                       setCutInError(null)
                       setCutInSucceeded(false)
+                      setCutInBookingId(null)
                       setCutInOpen(true) // show QR immediately; API runs in background
                       setCutInBusy(true)
                       void onCutIn(vehicle, target)
@@ -614,10 +665,12 @@ export function BookingDrawer({
                           if (!res.ok) {
                             // Keep QR open; soft inline error + retry on sheet (no toast).
                             setCutInSucceeded(false)
+                            setCutInBookingId(null)
                             setCutInError(res.reason || '插队失败，请稍后重试')
                           } else {
                             setCutInError(null)
                             setCutInSucceeded(true)
+                            setCutInBookingId(res.booking?.id ?? null)
                           }
                         })
                         .finally(() => setCutInBusy(false))

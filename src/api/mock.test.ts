@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   mockCreateBooking,
+  mockCancelCutIn,
   mockCutInBooking,
   mockGetBookings,
   mockGetReservedPeriods,
@@ -268,4 +269,49 @@ describe('reservation mock', () => {
     ).toBe(true)
   })
 
+
+  it('cancel cut-in restores host occupancy', () => {
+    const period = currentIdlePeriod()
+    if (period !== 'evening') {
+      const plant = mockCreateBooking({
+        sessionId: 'host-plant',
+        date: todayISO(),
+        period,
+        vehicle: { plate: '浙AY75C1', color: 'blue', type: 'sedan' },
+      })
+      expect(plant.ok).toBe(true)
+    }
+    const cut = mockCutInBooking({
+      sessionId: 'cut-in-user',
+      vehicle: { plate: '沪A99999', color: 'red', type: 'compact' },
+    })
+    expect(cut.ok).toBe(true)
+    const bookingId = cut.booking!.id
+
+    const bad = mockCancelCutIn({ sessionId: 'other', bookingId })
+    expect(bad.ok).toBe(false)
+
+    const cancel = mockCancelCutIn({ sessionId: 'cut-in-user', bookingId })
+    expect(cancel.ok).toBe(true)
+
+    const today = mockGetTodayBookings()
+    expect(
+      today.some(
+        (r) =>
+          r.spotId === 'C' &&
+          r.period === period &&
+          r.status === 'booked' &&
+          r.isHost === true,
+      ),
+    ).toBe(true)
+    expect(
+      today.some(
+        (r) => r.spotId === 'C' && r.period === period && r.status === 'cut_in_replaced',
+      ),
+    ).toBe(false)
+    expect(mockGetReservedPeriods(todayISO(), 'C')).toContain(period)
+
+    const again = mockCancelCutIn({ sessionId: 'cut-in-user', bookingId })
+    expect(again.ok).toBe(true)
+  })
 })

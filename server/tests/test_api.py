@@ -495,3 +495,189 @@ def test_cut_in_explicit_period_supersedes_that_host_slot(client):
     reserved = client.get("/api/spots/C/reserved", params={"date": today}).json()
     assert target in reserved
 
+
+
+def test_cancel_cut_in_restores_host_and_notifies(client, monkeypatch):
+    from app.timeutil import current_idle_period, today_iso
+    from app.host_plates import HOST_PLATES
+
+    calls = []
+
+    class FakeResponse:
+        status_code = 200
+
+        def json(self):
+            return {"errcode": 0}
+
+    class FakeClient:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return False
+
+        def post(self, url, json=None):
+            calls.append({"url": url, "json": json})
+            return FakeResponse()
+
+    client.app.state.settings.dingtalk_webhook_url = (
+        "https://oapi.dingtalk.com/robot/send?access_token=test-token-only"
+    )
+    client.app.state.settings.dingtalk_sec_secret = "SEC000testsecret"
+    client.app.state.settings.public_base_url = "https://charge-spot.example.com"
+    client.app.state.settings.cut_in_revoke_secret = "revoke-test-secret"
+    import app.dingtalk as dingtalk
+
+    monkeypatch.setattr(dingtalk.httpx, "Client", FakeClient)
+
+    today = today_iso()
+    period = current_idle_period()
+    host_plate = next(iter(HOST_PLATES))
+    if period != "evening":
+        plant = client.post(
+            "/api/bookings",
+            json={
+                "sessionId": "host-plant",
+                "date": today,
+                "period": period,
+                "vehicle": {"plate": host_plate, "color": "blue", "type": "sedan"},
+            },
+        )
+        assert plant.json()["ok"] is True
+
+    cut = client.post(
+        "/api/bookings/cut-in",
+        json={
+            "sessionId": "cut-in-user",
+            "vehicle": {"plate": "沪A99999", "color": "red", "type": "compact"},
+            "period": period,
+        },
+    )
+    assert cut.json()["ok"] is True
+    booking_id = cut.json()["booking"]["id"]
+
+    # Cut-in DingTalk includes revoke URL
+    assert any(
+        "超级插队" in c["json"]["text"]["content"]
+        and "/api/cut-in/revoke?bookingId=" in c["json"]["text"]["content"]
+        for c in calls
+    )
+
+    # Wrong session rejected
+    bad = client.post(
+        "/api/bookings/cut-in/cancel",
+        json={"sessionId": "other", "bookingId": booking_id},
+    )
+    assert bad.json()["ok"] is False
+
+    cancel = client.post(
+        "/api/bookings/cut-in/cancel",
+        json={"sessionId": "cut-in-user", "bookingId": booking_id},
+    )
+    assert cancel.status_code == 200
+    assert cancel.json()["ok"] is True, cancel.json()
+
+    today_rows = client.get("/api/bookings/today").json()
+    period_rows = [row for row in today_rows if row["spotId"] == "C" and row["period"] == period]
+    assert any(row["status"] == "booked" and row["isHost"] for row in period_rows)
+    assert not any(row["status"] == "cut_in_replaced" for row in period_rows)
+
+    reserved = client.get("/api/spots/C/reserved", params={"date": today}).json()
+    assert period in reserved
+
+    assert any("取消插队" in c["json"]["text"]["content"] for c in calls)
+
+    # Idempotent
+    again = client.post(
+        "/api/bookings/cut-in/cancel",
+        json={"sessionId": "cut-in-user", "bookingId": booking_id},
+    )
+    assert again.json()["ok"] is True
+
+
+def test_revoke_cut_in_signed_link(client):
+    from app.timeutil import current_idle_period, today_iso
+    from app.host_plates import HOST_PLATES
+    from app.dingtalk import build_revoke_url
+
+    client.app.state.settings.public_base_url = "https://charge-spot.example.com"
+    client.app.state.settings.cut_in_revoke_secret = "revoke-test-secret"
+
+    today = today_iso()
+    period = current_idle_period()
+    host_plate = next(iter(HOST_PLATES))
+    if period != "evening":
+        plant = client.post(
+            "/api/bookings",
+            json={
+                "sessionId": "host-plant",
+                "date": today,
+                "period": period,
+                "vehicle": {"plate": host_plate, "color": "blue", "type": "sedan"},
+            },
+        )
+        assert plant.json()["ok"] is True
+
+    cut = client.post(
+        "/api/bookings/cut-in",
+        json={
+            "sessionId": "cut-in-user",
+            "vehicle": {"plate": "沪C77777", "color": "white", "type": "compact"},
+            "period": period,
+        },
+    )
+    assert cut.json()["ok"] is True
+    booking_id = cut.json()["booking"]["id"]
+
+    bad = client.get(
+        "/api/cut-in/revoke",
+        params={"bookingId": booking_id, "exp": 9999999999, "sig": "deadbeef"},
+    )
+    assert bad.status_code == 403
+
+    url = build_revoke_url(
+        "https://charge-spot.example.com",
+        "revoke-test-secret",
+        booking_id,
+    )
+    # Use path+query from built URL
+    from urllib.parse import urlparse
+
+    parsed = urlparse(url)
+    ok = client.get(parsed.path + "?" + parsed.query)
+    assert ok.status_code == 200, ok.text
+    assert "已撤销插队" in ok.text
+    assert "车主占用已恢复" in ok.text
+
+    today_rows = client.get("/api/bookings/today").json()
+    period_rows = [row for row in today_rows if row["spotId"] == "C" and row["period"] == period]
+    assert any(row["status"] == "booked" and row["isHost"] for row in period_rows)
+    assert not any(row["status"] == "cut_in_replaced" for row in period_rows)
+
+    # Idempotent second click
+    again = client.get(parsed.path + "?" + parsed.query)
+    assert again.status_code == 200
+    assert "已撤销插队" in again.text
+
+
+def test_revoke_sig_helpers():
+    from app.dingtalk import build_revoke_url, verify_revoke_sig
+    from urllib.parse import parse_qs, urlparse
+
+    url = build_revoke_url(
+        "https://charge-spot.example.com/",
+        "secret",
+        "bk_abc",
+        ttl_sec=3600,
+        now=1_700_000_000,
+    )
+    assert url.startswith("https://charge-spot.example.com/api/cut-in/revoke?")
+    qs = parse_qs(urlparse(url).query)
+    exp = int(qs["exp"][0])
+    sig = qs["sig"][0]
+    assert verify_revoke_sig("secret", "bk_abc", exp, sig, now=1_700_000_000)
+    assert not verify_revoke_sig("secret", "bk_abc", exp, sig, now=1_700_000_000 + 4000)
+    assert not verify_revoke_sig("wrong", "bk_abc", exp, sig, now=1_700_000_000)

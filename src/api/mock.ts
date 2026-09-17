@@ -1,4 +1,4 @@
-import type { Booking, SpotBookingView, SpotId, SpotStatus, TimePeriod, VehicleInfo } from '../types'
+import type { Booking, BookResult, SpotBookingView, SpotId, SpotStatus, TimePeriod, VehicleInfo } from '../types'
 import { BOOKABLE_SPOT, PERIOD_ORDER, SPOT_IDS } from '../types'
 import { uid } from '../lib/id'
 import { maskPlate } from '../lib/plate'
@@ -287,3 +287,39 @@ export function mockCutInBooking(input: {
 export function mockReset() {
   write(seedBookings())
 }
+
+export function mockCancelCutIn(input: {
+  sessionId: string
+  bookingId: string
+}): BookResult {
+  const bookings = read()
+  const jumper = bookings.find((b) => b.id === input.bookingId)
+  if (!jumper) {
+    return { ok: false, reason: '找不到该插队预约' }
+  }
+  if (jumper.sessionId !== input.sessionId) {
+    return { ok: false, reason: '只能取消自己的插队' }
+  }
+  if (jumper.cancelled) {
+    return { ok: true, reason: '插队已取消，车主占用已恢复' }
+  }
+  const host = bookings.find(
+    (b) => b.supersededBy === jumper.id && b.cancelReason === 'cut_in',
+  )
+  if (!host) {
+    return { ok: false, reason: '找不到被插队的车主预约，无法恢复' }
+  }
+  const next = bookings.map((b) => {
+    if (b.id === jumper.id) {
+      return { ...b, cancelled: true, cancelReason: 'user_cancel' }
+    }
+    if (b.id === host.id) {
+      return { ...b, cancelled: false, cancelReason: undefined, supersededBy: undefined }
+    }
+    return b
+  })
+  write(next)
+  const cancelled = next.find((b) => b.id === jumper.id)!
+  return { ok: true, reason: '已取消插队，车主占用已恢复', booking: cancelled }
+}
+
