@@ -18,14 +18,17 @@ describe('hostPlates', () => {
     expect(HOST_PLATES).toHaveLength(2)
   })
 
-  it('matches public masked host plates', () => {
+  it('matches public masked host plates (legacy; mask collides)', () => {
     for (const p of HOST_PLATES) {
       expect(isHostPlateMasked(maskPlate(p))).toBe(true)
     }
     expect(isHostPlateMasked(maskPlate('沪E77889'))).toBe(false)
+    // Collision: non-host 浙A12348 masks like 浙ACU6508
+    expect(maskPlate('浙A12348')).toBe(maskPlate('浙ACU6508'))
+    expect(isHostPlateMasked(maskPlate('浙A12348'))).toBe(true)
   })
 
-  it('cut-in available when C vehicle is host or current period booking matches', () => {
+  it('cut-in available when C vehicle is host or booking has isHost', () => {
     expect(
       isHostCutInAvailable({
         spot: {
@@ -54,6 +57,7 @@ describe('hostPlates', () => {
             period: 'morning',
             status: 'booked',
             plateMasked: maskPlate('浙AY75C1'),
+            isHost: true,
             vehicleType: 'sedan',
             vehicleColor: 'white',
           },
@@ -72,6 +76,7 @@ describe('hostPlates', () => {
             period: 'evening',
             status: 'booked',
             plateMasked: maskPlate('浙ACU6508'),
+            isHost: true,
             vehicleType: 'sedan',
             vehicleColor: 'white',
           },
@@ -92,11 +97,57 @@ describe('hostPlates', () => {
             period: 'evening',
             status: 'cut_in_replaced',
             plateMasked: maskPlate('浙ACU6508'),
+            isHost: true,
             vehicleType: 'sedan',
             vehicleColor: 'white',
           },
         ],
       }),
     ).toBe(false)
+  })
+
+  it('mask collision alone must NOT enable cut-in without isHost', () => {
+    const collidingMasked = maskPlate('浙A12348')
+    expect(collidingMasked).toBe('浙A···8')
+    expect(collidingMasked).toBe(maskPlate('浙ACU6508'))
+    expect(isHostPlateMasked(collidingMasked)).toBe(true)
+
+    expect(
+      isHostCutInAvailable({
+        period: 'morning',
+        todayBookings: [
+          {
+            id: 'non-host',
+            spotId: 'C',
+            date: '2026-09-16',
+            period: 'morning',
+            status: 'booked',
+            plateMasked: collidingMasked,
+            isHost: false,
+            vehicleType: 'convertible',
+            vehicleColor: 'blue',
+          },
+        ],
+      }),
+    ).toBe(false)
+
+    expect(
+      isHostCutInAvailable({
+        period: 'morning',
+        todayBookings: [
+          {
+            id: 'host',
+            spotId: 'C',
+            date: '2026-09-16',
+            period: 'morning',
+            status: 'booked',
+            plateMasked: collidingMasked,
+            isHost: true,
+            vehicleType: 'pickup',
+            vehicleColor: 'white',
+          },
+        ],
+      }),
+    ).toBe(true)
   })
 })

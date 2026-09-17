@@ -54,6 +54,7 @@ class SpotBookingView(BaseModel):
     period: TimePeriod
     status: BookingStatus = "booked"
     plateMasked: str
+    isHost: bool = False
     vehicleType: VehicleType
     vehicleColor: VehicleColor
     supersededBy: str | None = None

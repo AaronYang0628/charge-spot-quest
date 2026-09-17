@@ -15,7 +15,10 @@ export function isHostPlate(plate: string | null | undefined): boolean {
   return (HOST_PLATES as readonly string[]).includes(n)
 }
 
-/** Public lists only expose masked plates — match against host masks. */
+/**
+ * @deprecated Masked strings collide (浙A12348 and 浙ACU6508 both → 浙A···8).
+ * Prefer SpotBookingView.isHost from the full plate. Kept for display-only checks.
+ */
 export function isHostPlateMasked(plateMasked: string | null | undefined): boolean {
   if (!plateMasked) return false
   return HOST_PLATES.some((p) => maskPlate(p) === plateMasked)
@@ -23,7 +26,8 @@ export function isHostPlateMasked(plateMasked: string | null | undefined): boole
 
 /**
  * Super cut-in is allowed only when bay C (649) is held by a host plate
- * for the current Shanghai idle period (active booked row, not already replaced).
+ * for the given / current Shanghai idle period (active booked row, not already replaced).
+ * Uses b.isHost from the server/mock — never plateMasked alone.
  */
 export function isHostCutInAvailable(opts: {
   spot?: SpotStatus | null
@@ -43,7 +47,7 @@ export function isHostCutInAvailable(opts: {
       b.spotId === spotId &&
       b.period === period &&
       b.status === 'booked' &&
-      isHostPlateMasked(b.plateMasked),
+      b.isHost === true,
   )
 }
 

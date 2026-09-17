@@ -10,7 +10,7 @@ import {
   mockReset,
   MOCK_KEY,
 } from './mock'
-import { isHostPlateMasked } from '../lib/hostPlates'
+import { isHostCutInAvailable, isHostPlateMasked } from '../lib/hostPlates'
 import { normalizeVehicle } from '../lib/normalize'
 import { maskPlate } from '../lib/plate'
 import { loadState } from '../lib/storage'
@@ -164,7 +164,7 @@ describe('reservation mock', () => {
           r.spotId === 'C' &&
           r.period === period &&
           r.status === 'booked' &&
-          isHostPlateMasked(r.plateMasked),
+          r.isHost === true,
       ),
     ).toBe(true)
 
@@ -184,8 +184,9 @@ describe('reservation mock', () => {
       (r) => r.spotId === 'C' && r.period === period && r.status === 'booked',
     )
     expect(replaced).toHaveLength(1)
-    expect(isHostPlateMasked(replaced[0]!.plateMasked)).toBe(true)
+    expect(replaced[0]!.isHost).toBe(true)
     expect(active).toHaveLength(1)
+    expect(active[0]!.isHost).toBe(false)
     expect(mockGetReservedPeriods(todayISO(), 'C')).toContain(period)
     expect(
       mockCutInBooking({
@@ -226,7 +227,7 @@ describe('reservation mock', () => {
           r.spotId === 'C' &&
           r.period === target &&
           r.status === 'cut_in_replaced' &&
-          isHostPlateMasked(r.plateMasked),
+          r.isHost === true,
       ),
     ).toBe(true)
     expect(
@@ -235,6 +236,36 @@ describe('reservation mock', () => {
       ),
     ).toBe(true)
     expect(mockGetReservedPeriods(todayISO(), 'C')).toContain(target)
+  })
+
+  it('sets isHost from full plate; mask-colliding non-host must not enable cut-in', () => {
+    mockReset()
+    const evening = mockGetTodayBookings().find(
+      (r) => r.spotId === 'C' && r.period === 'evening' && r.status === 'booked',
+    )
+    expect(evening?.isHost).toBe(true)
+    expect(evening?.plateMasked).toBe(maskPlate('浙ACU6508'))
+
+    // Plant non-host on morning that masks like host (浙A···8)
+    const plant = mockCreateBooking({
+      sessionId: 'mask-collision',
+      date: todayISO(),
+      period: 'morning',
+      vehicle: { plate: '浙A12348', color: 'blue', type: 'convertible' },
+    })
+    expect(plant.ok).toBe(true)
+    const morning = mockGetTodayBookings().find(
+      (r) => r.spotId === 'C' && r.period === 'morning' && r.status === 'booked',
+    )
+    expect(morning?.plateMasked).toBe('浙A···8')
+    expect(isHostPlateMasked(morning!.plateMasked)).toBe(true)
+    expect(morning?.isHost).toBe(false)
+    expect(
+      isHostCutInAvailable({ period: 'morning', todayBookings: mockGetTodayBookings() }),
+    ).toBe(false)
+    expect(
+      isHostCutInAvailable({ period: 'evening', todayBookings: mockGetTodayBookings() }),
+    ).toBe(true)
   })
 
 })

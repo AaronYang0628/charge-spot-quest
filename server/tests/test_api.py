@@ -43,6 +43,13 @@ def test_today_bookings_masked(client):
     for row in rows:
         assert "···" in row["plateMasked"]
         assert "sessionId" not in row
+        assert "isHost" in row
+        assert isinstance(row["isHost"], bool)
+    # Seed evening C is host; bay A morning is not (plate no longer mask-collides)
+    c_evening = [x for x in rows if x["spotId"] == "C" and x["period"] == "evening"]
+    assert c_evening and c_evening[0]["isHost"] is True
+    a_morning = [x for x in rows if x["spotId"] == "A" and x["period"] == "morning"]
+    assert a_morning and a_morning[0]["isHost"] is False
 
 
 def test_create_booking_and_conflict(client):

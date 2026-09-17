@@ -54,6 +54,8 @@ export interface SpotBookingView {
   period: TimePeriod
   status: SpotBookingStatus
   plateMasked: string
+  /** True when full plate is a host (浙ACU6508 / 浙AY75C1); do not infer from plateMasked. */
+  isHost: boolean
   vehicleType: VehicleType
   vehicleColor: VehicleColor
   supersededBy?: string

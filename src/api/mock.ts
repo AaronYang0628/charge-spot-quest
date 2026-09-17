@@ -7,7 +7,7 @@ import { addDaysISO, currentIdlePeriod, isBookableDate, todayISO } from '../lib/
 import { normalizeBookings, normalizeVehicle } from '../lib/normalize'
 
 /** Bump when seed/palette shape changes so empty→fresh demo loads. */
-export const MOCK_KEY = 'charge-spot-quest-mock-v4'
+export const MOCK_KEY = 'charge-spot-quest-mock-v5'
 
 function seedBookings(today = todayISO()): Booking[] {
   const demo = 'demo-seed'
@@ -31,13 +31,13 @@ function seedBookings(today = todayISO()): Booking[] {
   })
   return [
     // Today — visible in 今日预约 list on first load (keep C free for demo booking)
-    mk('A', 0, 'morning', '浙A12348', 'blue', 'convertible', 1),
+    mk('A', 0, 'morning', '浙A12345', 'blue', 'convertible', 1),
     mk('B', 0, 'evening', '苏C66552', 'gray', 'convertible', 1),
     mk('C', 0, 'evening', '浙ACU6508', 'white', 'pickup', 1),
     // Future seeds
     mk('A', 2, 'noon', '沪B88881', 'red', 'pickup', 2),
     mk('B', 3, 'morning', '浙D90003', 'black', 'pickup', 2),
-    mk('C', 2, 'morning', '浙A10248', 'red', 'convertible', 2),
+    mk('C', 2, 'morning', '浙A10247', 'red', 'convertible', 2),
     mk('C', 4, 'noon', '浙F33117', 'blue', 'convertible', 3),
   ]
 }
@@ -48,6 +48,13 @@ function read(): Booking[] {
     if (current !== null) {
       const parsed = normalizeBookings(JSON.parse(current))
       return parsed
+    }
+    const v4 = localStorage.getItem('charge-spot-quest-mock-v4')
+    if (v4 !== null) {
+      const migrated = normalizeBookings(JSON.parse(v4))
+      const bookings = migrated.length ? migrated : seedBookings()
+      write(bookings)
+      return bookings
     }
     const v3 = localStorage.getItem('charge-spot-quest-mock-v3')
     if (v3 !== null) {
@@ -191,6 +198,7 @@ function toView(b: Booking): SpotBookingView {
     period: b.period,
     status: replaced ? 'cut_in_replaced' : 'booked',
     plateMasked: maskPlate(b.vehicle.plate),
+    isHost: isHostPlate(b.vehicle.plate),
     vehicleType: b.vehicle.type,
     vehicleColor: b.vehicle.color,
     supersededBy: b.supersededBy,

@@ -74,6 +74,7 @@ def _row_to_view(row: BookingRow) -> SpotBookingView:
         period=row.period,  # type: ignore[arg-type]
         status="cut_in_replaced" if replaced else "booked",
         plateMasked=mask_plate(row.plate),
+        isHost=is_host_plate(row.plate),
         vehicleType=row.vehicle_type,  # type: ignore[arg-type]
         vehicleColor=row.color,  # type: ignore[arg-type]
         supersededBy=row.superseded_by,
