@@ -22,6 +22,7 @@ import {
   CUT_IN_NEED_HOST_PERIOD,
   CUT_IN_NEED_PLATE,
   CUT_IN_QR_CAPTION,
+  HOST_PLATES,
   isHostCutInAvailable,
 } from '../lib/hostPlates'
 
@@ -303,6 +304,17 @@ export function BookingDrawer({
               {cutInSucceeded ? '已抢占' : '正在抢占'}
               {cutInTargetPeriod ? PERIOD_LABELS[cutInTargetPeriod] : '当前'}
               时段 · 请用支付宝扫码支付
+            </p>
+            <p
+              className="mt-2 rounded-2xl px-3 py-2 text-[11px] leading-snug"
+              style={{
+                background: 'color-mix(in srgb, var(--ui-accent) 10%, transparent)',
+                border: '1px solid color-mix(in srgb, var(--ui-accent) 28%, transparent)',
+                color: 'var(--ui-muted)',
+              }}
+            >
+              说明：{HOST_PLATES.join(' / ')}{' '}
+              是车主号牌。超级插队只能插车主占用的时段，其他用户的预约不会被插队。
             </p>
             <div
               className="mt-4 overflow-hidden rounded-2xl"
